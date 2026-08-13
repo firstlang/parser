@@ -31,3 +31,4 @@ This document is conceptual framing only. Architecture internals (tapes, charstr
 ## Structure
 
 The /context/api folder has generated .d.ts files that you should use to get an idea of API shape rather than looking at the raw source code itself, in the interest of token economy.
+Before adding or changing parser tokens, masks, fields, sums, tapes, or mask application behavior, read /src-framework/intents.txt and preserve every applicable architectural claim.
