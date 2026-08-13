@@ -272,13 +272,9 @@ function createPatternForField(field: X.TField, inside: boolean): string[]
 		return [X.Proxy.get(field.data.enclosure)];
 	
 	const pattern: string[] = [];
-	
 	const nullables = field.data.nullableTokens;
 	if (nullables.length)
-	{
-		pattern.unshift("(?:");
-		pattern.push(...nullables.map(t => X.Proxy.get(t)), ")?");
-	}
+		pattern.push(...nullables.map(t => X.Proxy.get(t)));
 	
 	// I'm pretty sure if it's a lasso then regardless of anything else we always
 	// just perform a catch all in the regular expression? And then it becomes
@@ -286,7 +282,7 @@ function createPatternForField(field: X.TField, inside: boolean): string[]
 	if (field.kind === "lasso")
 	{
 		pattern.push(catchAllPattern);
-		return pattern;
+		return nullables.length ? ["(?:", ...pattern, ")?"] : pattern;
 	}
 	
 	const wildcard = field.kind === "one" ? 
@@ -320,7 +316,10 @@ function createPatternForField(field: X.TField, inside: boolean): string[]
 		// anything else because we've already determined that
 		// anything can match.
 		else if (inside || !match.descriptor.insidePattern)
-			return [field.kind === "many" ? ".*?" : wildcard];
+		{
+			pattern.push(field.kind === "many" ? ".*?" : wildcard);
+			return nullables.length ? ["(?:", ...pattern, ")?"] : pattern;
+		}
 		
 		else
 			embeds.push("(" + match.descriptor.insidePattern + ")");
@@ -364,7 +363,7 @@ function createPatternForField(field: X.TField, inside: boolean): string[]
 	if (field.kind === "some")
 		pattern.push("{1,}");
 	
-	return pattern;
+	return nullables.length ? ["(?:", ...pattern, ")?"] : pattern;
 }
 
 /**

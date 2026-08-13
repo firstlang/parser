@@ -84,9 +84,7 @@ export abstract class Mask
 				continue;
 			}
 			
-			const structureConditional = field.kind === "has" && !!value ?
-				field.match :
-				[];
+			const structureConditional = getConditionalStructure(field, value);
 			
 			maskEntries.push({
 				value,
@@ -109,6 +107,28 @@ export abstract class Mask
 	queryToken(containedToken: X.Token | X.Tape): IMaskReflectedToken | null
 	{
 		return null;
+	}
+}
+
+/** Returns fixed structure whose presence is determined by a field's value. */
+function getConditionalStructure(field: X.TField, value: unknown)
+{
+	if (field.kind === "has")
+		return value === true ? field.match : [];
+
+	if (field.data.nullableTokens.length === 0)
+		return [];
+
+	switch (field.kind)
+	{
+		case "one":
+		case "lasso":
+			return value === null ? [] : field.data.nullableTokens;
+		case "many":
+		case "some":
+			return Array.isArray(value) && value.length > 0 ? field.data.nullableTokens : [];
+		default:
+			return [];
 	}
 }
 

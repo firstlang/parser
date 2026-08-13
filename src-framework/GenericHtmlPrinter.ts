@@ -86,7 +86,7 @@ export class GenericHtmlPrinter
 		if (reflected.field.kind === "has")
 		{
 			if (reflected.value === true)
-				content.push(...reflected.field.match.map(this.spanifyToken));
+				content.push(...reflected.field.match.map(token => this.spanifyToken(token)));
 		}
 		else for (const maskFieldValue of X.toArray(reflected.value).flat())
 		{

@@ -45,6 +45,23 @@ export const InfixOperatorKind = {
 } as const;
 export type InfixOperatorKind = (typeof InfixOperatorKind)[keyof typeof InfixOperatorKind];
 
+/** Atomic fixed-token types accepted in unions and ordinary annotations. */
+export const PrimitiveTypeKind = {
+	...X.tokenGroups.primitives.ints,
+	...X.tokenGroups.primitives.uints,
+	...X.tokenGroups.primitives.floats,
+	...X.tokenGroups.primitives.bigs,
+	...X.tokenGroups.primitives.others,
+} as const;
+export type PrimitiveTypeKind = (typeof PrimitiveTypeKind)[keyof typeof PrimitiveTypeKind];
+
+/** Atomic fixed-token types accepted in unions and ordinary annotations. */
+export const BasicTypeKind = {
+	...PrimitiveTypeKind,
+	null: X.tokenGroups.values.null,
+} as const;
+export type BasicTypeKind = (typeof BasicTypeKind)[keyof typeof BasicTypeKind];
+
 //# Statement prefixes
 
 /** */

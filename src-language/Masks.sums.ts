@@ -2,6 +2,8 @@ import * as X from "./XX.ts";
 
 export type ParameterMasks = X.Sum<typeof ParameterMasks>;
 export const ParameterMasks = X.sum(
+	X.ConstrainedTypeParameterMask,
+	X.TypeParameterMask,
 	X.TypedParameterMask,
 	X.TypedDefaultParameterMask,
 	X.TypedOptionalParameterMask,
@@ -9,9 +11,52 @@ export const ParameterMasks = X.sum(
 	X.DefaultParameterMask,
 );
 
+/** Type forms that can be combined linearly with `or` or `and`. */
+export type TypeOperandMasks = X.Sum<typeof TypeOperandMasks>;
+export const TypeOperandMasks: readonly [
+	typeof X.EditableArrayTypeExpressionMask,
+	typeof X.EditableTypeExpressionMask,
+	typeof X.ArrayTypeExpressionMask,
+	typeof X.GenericTypeExpressionMask,
+	typeof X.TypeExpressionMask,
+] = X.sum(
+	X.EditableArrayTypeExpressionMask,
+	X.EditableTypeExpressionMask,
+	X.ArrayTypeExpressionMask,
+	X.GenericTypeExpressionMask,
+	X.TypeExpressionMask,
+);
+
+/** Intersection operands exclude primitive and `null` atomic types. */
+export type IntersectionTypeOperandMasks = X.Sum<typeof IntersectionTypeOperandMasks>;
+export const IntersectionTypeOperandMasks = X.sum(
+	X.EditableArrayTypeExpressionMask,
+	X.EditableTypeExpressionMask,
+	X.ArrayTypeExpressionMask,
+	X.GenericTypeExpressionMask,
+	X.NamedTypeExpressionMask,
+);
+
+/** Type forms accepted by inline annotations. */
+export type TypeMasks = X.Sum<typeof TypeMasks>;
+export const TypeMasks: readonly [
+	typeof X.TypeUnionExpressionMask,
+	typeof X.TypeIntersectionExpressionMask,
+	typeof X.EditableArrayTypeExpressionMask,
+	typeof X.EditableTypeExpressionMask,
+	typeof X.ArrayTypeExpressionMask,
+	typeof X.GenericTypeExpressionMask,
+	typeof X.TypeExpressionMask,
+] = X.sum(
+	X.TypeUnionExpressionMask,
+	X.TypeIntersectionExpressionMask,
+	...TypeOperandMasks,
+);
+
 export type SpaceBodyMasks = X.Sum<typeof SpaceBodyMasks>;
 export const SpaceBodyMasks = X.sum(
 	X.FromMask,
+	X.TypedStableFunctionMask,
 	X.StableFunctionMask,
 	X.ClassMask,
 	X.DeclareMask,
@@ -31,6 +76,7 @@ export const ClassBodyMasks = X.sum(
 	X.DeclareMask,
 	X.ConstructorFunctionMask,
 	X.GhostFunctionMask,
+	X.TypedStableFunctionMask,
 	X.StableFunctionMask,
 	X.PropertyMask,
 	X.FieldMask,
@@ -65,12 +111,4 @@ export const StatementMasks = X.sum(
 	X.ThrowStatementMask,
 	X.CommentStatementMask,
 	X.ExpressionStatementMask,
-);
-
-/**
- * Sum type for all syntax that exists within the type annnotation side of the code.
- */
-export type TypeMasks = X.Sum<typeof TypeMasks>;
-export const TypeMasks = X.sum(
-	
 );

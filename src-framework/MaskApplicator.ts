@@ -97,6 +97,9 @@ function tryApplyMask(
 	{
 		const mask = new (descriptor.type as any)(); // 🫤
 		const matches = matchesArray[i];
+		for (const [name, field] of Object.entries(descriptor.schema))
+			if (!X.isAnchorProperty(name))
+				mask[name] = getFieldDefaultValue(field as X.TField);
 		
 		for (let g = matches.groups.length; g-- > 0;)
 		{
@@ -182,6 +185,17 @@ function getFieldValue(tapeLike: X.TapeLike, field: X.TField, depth = 0)
 	
 	if (field.kind === "has")
 		return field.match.every((fixed, i) => tapeLike.at(i) === fixed);
+
+	// Nullable-field anchors participate in the field's matched span, but are
+	// structural syntax rather than part of the field value itself.
+	if (field.data.nullableTokens.length > 0)
+	{
+		const anchors = field.data.nullableTokens;
+		if (!anchors.every((fixed, i) => tapeLike.at(i) === fixed))
+			return getFieldDefaultValue(field);
+		
+		tapeLike = tapeLike.slice(anchors.length, tapeLike.maskedSize);
+	}
 	
 	// ---------------------------------------------
 	// FIELD-LEVEL TAPE UNWRAPPING
@@ -224,7 +238,7 @@ function getFieldValue(tapeLike: X.TapeLike, field: X.TField, depth = 0)
 	}
 	
 	if (field.kind === "lasso")
-		return ensureNotNull(getMatchFieldValue(tapeLike, field, depth));
+		return ensureNotNull(getMatchFieldValue(tapeLike, field, depth), field.description);
 	
 	if (field.kind === "many" || field.kind === "some")
 	{
@@ -243,8 +257,31 @@ function getFieldValue(tapeLike: X.TapeLike, field: X.TField, depth = 0)
 		}
 		else
 		{
-			const result = getMatchFieldValue(tapeLike, field, depth);
-			return result;
+			// A repeated field captured from a Fragment/Lens is one contiguous
+			// range, unlike a Tape where read() already supplies its item
+			// boundaries. Discover each item's span by trying progressively
+			// larger slices. This matters when one repeated value is itself a
+			// multi-slot mask, such as `or Type` in a type-union successor list.
+			const values: any[] = [];
+			let index = 0;
+			while (index < tapeLike.maskedSize)
+			{
+				let value: any = null;
+				for (let end = index + 1; end <= tapeLike.maskedSize; end++)
+				{
+					value = getMatchFieldValue(tapeLike.slice(index, end), field, depth);
+					if (value !== null)
+						break;
+				}
+				if (value === null)
+					return null;
+
+				values.push(value);
+				// Applying the resolved value collapses its source span into one
+				// mask-aware slot, so the next unresolved item follows immediately.
+				index++;
+			}
+			return values;
 		}
 	}
 	
@@ -467,10 +504,10 @@ function ensure<T extends abstract new (...args: any[]) => any>(
 }
 
 /** */
-function ensureNotNull<T>(value: T | null | undefined): T
+function ensureNotNull<T>(value: T | null | undefined, description = "Value"): T
 {
 	if (value === null || value === undefined)
-		throw new Error("Value must not be null or undefined");
+		throw new Error(`${description} must not be null or undefined`);
 	
 	return value;
 }

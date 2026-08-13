@@ -7,10 +7,9 @@ import * as X from "./XX.ts";
  * paren-enclosed body of statements or expresions.
  */
 type Body = (X.StatementMasks | X.ExpressionMasks)[];
-type SimpleType = X.EntityToken | X.FixedToken;
 const reuse = {
 	get body(): X.IManyField { return X.many(...X.StatementMasks, ...X.ExpressionMasks).paren(); },
-	get type(): X.IOneField { return X.one(X.EntityToken, ...Object.values(X.tokenGroups.primitives)); },
+	get type(): X.IOneField { return X.one(...X.TypeMasks); },
 } as const;
 
 //# Top level Masks (used everywhere)
@@ -37,12 +36,19 @@ export class ControlFlowMask extends X.EnclosureMask
 export class TypeExpressionMask extends X.Mask
 {
 	readonly value: X.EntityToken | X.FixedToken = X.unset;
-
+	
 	createSchema(): X.TMaskSchema { return {
-		value: X.one(
-			X.EntityToken,
-			...Object.values(X.tokenGroups.primitives),
-		),
+		value: X.one(X.EntityToken, X.BasicTypeKind),
+	}}
+}
+
+/** Named atomic type used where primitive and `null` operands are prohibited. */
+export class NamedTypeExpressionMask extends X.Mask
+{
+	readonly value: X.EntityToken = X.unset;
+	
+	createSchema() { return {
+		value: X.one(X.EntityToken),
 	}}
 }
 
@@ -92,28 +98,122 @@ export class DeclareMask extends X.Mask
 
 //# Type-related
 
-/** */
-export class TypeUnionExpressionMask extends X.TypeExpressionMask
+/** `or Type` */
+export class TypeUnionSuccessorMask extends X.Mask
 {
-	createSchema() { return {
-		
+	readonly value: X.TypeOperandMasks = X.unset;
+	
+	createSchema(): X.TMaskSchema { return {
+		...X.anchor(X.tokens.or),
+		value: X.one(...X.TypeOperandMasks),
 	}}
 }
 
-/** */
-export class TypeIntersectionExpressionMask extends X.TypeExpressionMask
+/** `Type or Type or Type` */
+export class TypeUnionExpressionMask extends X.Mask
 {
+	readonly origin: X.TypeOperandMasks = X.unset;
+	readonly successors: TypeUnionSuccessorMask[] = X.unset;
+	
 	createSchema() { return {
-		
+		origin: X.one(...X.TypeOperandMasks),
+		successors: X.some(TypeUnionSuccessorMask),
 	}}
 }
 
-/** */
-export class ObjectTypeExpressionMask extends X.TypeExpressionMask
+/** `and Type` */
+export class TypeIntersectionSuccessorMask extends X.Mask
 {
-	createSchema() { return {
-		
+	readonly value: X.IntersectionTypeOperandMasks = X.unset;
+	
+	createSchema(): X.TMaskSchema { return {
+		...X.anchor(X.tokens.and),
+		value: X.one(...X.IntersectionTypeOperandMasks),
 	}}
+}
+
+/** `Type and Type and Type` */
+export class TypeIntersectionExpressionMask extends X.Mask
+{
+	readonly origin: X.IntersectionTypeOperandMasks = X.unset;
+	readonly successors: TypeIntersectionSuccessorMask[] = X.unset;
+	
+	createSchema() { return {
+		origin: X.one(...X.IntersectionTypeOperandMasks),
+		successors: X.some(TypeIntersectionSuccessorMask),
+	}}
+}
+
+/** `Type(T, U)` */
+export class GenericTypeExpressionMask extends X.Mask
+{
+	readonly name: X.EntityToken = X.unset;
+	readonly arguments: X.TypeMasks[] = X.unset;
+	
+	createSchema(): X.TMaskSchema { return {
+		name: X.one(X.EntityToken),
+		arguments: X.some(...X.TypeMasks).paren(),
+	}}
+}
+
+/** Empty brackets used as one array-type suffix. */
+export class ArrayTypeSuffixMask extends X.EnclosureMask
+{
+	readonly content: X.EntityToken[] = X.unset;
+	
+	createSchemaEnclosed() { return {
+		enclosure: X.Enclosure.bracket,
+		content: X.many(X.EntityToken),
+	}}
+}
+
+/** `Type[]`, with any additional suffixes representing nested arrays. */
+export class ArrayTypeExpressionMask extends X.Mask
+{
+	readonly element: X.TypeExpressionMask | X.GenericTypeExpressionMask = X.unset;
+	readonly firstSuffix: ArrayTypeSuffixMask = X.unset;
+	readonly suffixes: ArrayTypeSuffixMask[] = X.unset;
+	
+	createSchema(): X.TMaskSchema { return {
+		element: X.one(X.GenericTypeExpressionMask, X.TypeExpressionMask),
+		firstSuffix: X.one(ArrayTypeSuffixMask),
+		suffixes: X.many(ArrayTypeSuffixMask),
+	}}
+}
+
+/** `editable Type[]`, kept flat so the editable qualifier owns the array shape. */
+export class EditableArrayTypeExpressionMask extends X.Mask
+{
+	readonly element: X.TypeExpressionMask | X.GenericTypeExpressionMask = X.unset;
+	readonly firstSuffix: ArrayTypeSuffixMask = X.unset;
+	readonly suffixes: ArrayTypeSuffixMask[] = X.unset;
+	
+	createSchema(): X.TMaskSchema { return {
+		...X.anchor(X.tokens.editable),
+		element: X.one(X.GenericTypeExpressionMask, X.TypeExpressionMask),
+		firstSuffix: X.one(ArrayTypeSuffixMask),
+		suffixes: X.many(ArrayTypeSuffixMask),
+	}}
+}
+
+/** `editable Type`; unlike `var`, editability is part of the type. */
+export class EditableTypeExpressionMask extends X.Mask
+{
+	readonly value: X.ArrayTypeExpressionMask | X.GenericTypeExpressionMask | X.TypeExpressionMask = X.unset;
+	
+	createSchema(): X.TMaskSchema { return {
+		...X.anchor(X.tokens.editable),
+		value: X.one(
+			X.ArrayTypeExpressionMask,
+			X.GenericTypeExpressionMask,
+			X.TypeExpressionMask),
+	}}
+}
+
+/** Reserved for alias-only structural type syntax. */
+export class ObjectTypeExpressionMask extends X.Mask
+{
+	createSchema() { return {} }
 }
 
 //# Function-related Masks
@@ -124,10 +224,31 @@ export class ParameterMask extends X.Mask
 	readonly name: X.EntityToken = X.unset;
 }
 
+/** `T is type` */
+export class TypeParameterMask extends X.ParameterMask
+{
+	createSchema() { return {
+		name: X.one(X.EntityToken),
+		...X.anchor(X.tokens.is, X.tokens.type),
+	}}
+}
+
+/** `T is type of Constraint` */
+export class ConstrainedTypeParameterMask extends X.ParameterMask
+{
+	readonly constraint: X.TypeMasks = X.unset;
+	
+	createSchema() { return {
+		name: X.one(X.EntityToken),
+		...X.anchor(X.tokens.is, X.tokens.typeof),
+		constraint: reuse.type,
+	}}
+}
+
 /** identifier is the_type */
 export class TypedParameterMask extends X.ParameterMask
 {
-	readonly type: SimpleType = X.unset;
+	readonly type: X.TypeMasks = X.unset;
 	
 	createSchema() { return {
 		name: X.one(X.EntityToken),
@@ -153,7 +274,7 @@ export class DefaultParameterMask extends X.ParameterMask
 export class TypedDefaultParameterMask extends X.ParameterMask
 {
 	readonly name: X.EntityToken = X.unset;
-	readonly type: SimpleType = X.unset;
+	readonly type: X.TypeMasks = X.unset;
 	readonly value: X.ExpressionMasks | null= X.unset;
 	
 	createSchema() { return {
@@ -169,7 +290,7 @@ export class TypedDefaultParameterMask extends X.ParameterMask
 export class TypedOptionalParameterMask extends X.ParameterMask
 {
 	readonly name: X.EntityToken = X.unset;
-	readonly type: SimpleType = X.unset;
+	readonly type: X.TypeMasks = X.unset;
 	
 	createSchema() { return {
 		name: X.one(X.EntityToken),
@@ -183,7 +304,7 @@ export class TypedOptionalParameterMask extends X.ParameterMask
 export class RestParameterMask extends X.ParameterMask
 {
 	readonly name: X.EntityToken = X.unset;
-	readonly type: SimpleType = X.unset;
+	readonly type: X.TypeMasks = X.unset;
 	
 	createSchema() { return {
 		...X.anchor(X.tokens.spread),
@@ -232,6 +353,21 @@ export class StableFunctionMask extends FunctionMask
 		body: reuse.body,
 	}}
 };
+
+/** Stable function with an explicit return annotation. */
+export class TypedStableFunctionMask extends X.StableFunctionMask
+{
+	readonly returnType: X.TypeMasks = X.unset;
+	
+	createSchema() { return {
+		...X.anchor(X.tokens.fn),
+		name: X.one(X.EntityToken),
+		signature: X.many(...X.ParameterMasks).paren(),
+		...X.anchor(X.tokens.is),
+		returnType: reuse.type,
+		body: reuse.body,
+	}}
+}
 
 /** */
 export class BuildFunctionMask extends FunctionMask
@@ -327,12 +463,12 @@ export class AliasMask extends X.Mask
 {
 	readonly name: X.EntityToken = X.unset;
 	readonly access: X.VisibilityKind = X.unset;
-	readonly type: X.TypeExpressionMask = X.unset;
+	readonly type: X.TypeMasks = X.unset;
 	
 	createSchema() { return {
 		name: X.one(X.EntityToken),
 		...X.anchor(X.tokens.is, X.tokens.aliasof),
-		type: X.one(X.TypeExpressionMask)
+		type: reuse.type,
 	}}
 }
 
@@ -426,6 +562,18 @@ export class SpaceMask extends X.Mask
 
 //# Statements
 
+/** Optional type and mutability syntax belonging to a simple assignment. */
+export class LocalTypeAnnotationMask extends X.Mask
+{
+	readonly mutable: boolean = X.unset;
+	readonly type: X.TypeMasks = X.unset;
+	
+	createSchema() { return {
+		mutable: X.has(X.tokens.var),
+		type: reuse.type,
+	}}
+}
+
 /**
  * a = b
  * a, b = c
@@ -433,15 +581,17 @@ export class SpaceMask extends X.Mask
 export class SimpleAssignmentMask extends X.Mask
 {
 	readonly target: X.EntityToken[] = X.unset;
+	readonly annotation: LocalTypeAnnotationMask | null = X.unset;
 	readonly defer: boolean = X.unset;
 	readonly operator: X.AssignerKind = X.unset;
 	readonly value: X.TExpressionable = X.unset;
 	
 	createSchema() { return {
 		target: X.many(X.EntityToken),
+		annotation: X.one(LocalTypeAnnotationMask).nullable(X.tokens.is),
 		defer: X.has(X.tokens.defer),
 		operator: X.one(X.AssignerKind),
-		value: X.lasso(...X.ExpressionMasks)
+		value: X.lasso(...X.ExpressionMasks, X.EntityToken, X.LiteralToken)
 	}}
 }
 

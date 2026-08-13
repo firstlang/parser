@@ -78,7 +78,8 @@ export async function runTests(
 		{
 			failures.push(error);
 			results[caseName] = errorMessage(error);
-			console.error(`FAIL ${caseName}: ${results[caseName]}`);
+			console.error(`FAIL ${caseName}:`);
+			console.error(error);
 		}
 	}
 
@@ -231,7 +232,10 @@ function printParsedTokens(tape: X.Tape)
 			
 			for (const [index, maskFieldValue] of fieldValue.entries())
 			{
-				if (index > 0 && maskField.field.match.includes(X.TypedParameterMask))
+				if (index > 0 && (
+					maskField.field.match.some(match => match === X.TypedParameterMask) ||
+					(mask instanceof X.GenericTypeExpressionMask &&
+						maskField.field.data.enclosure === X.Enclosure.paren)))
 					tokens.push(X.tokens.comma.text);
 
 				if (maskFieldValue instanceof X.Mask)
