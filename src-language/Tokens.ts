@@ -380,7 +380,7 @@ const words = Object.freeze({
 	from: new X.FixedToken("from"),
 	ghost: new X.FixedToken("ghost"),
 	interface: new X.FixedToken("interface"),
-	isnot: new X.FixedToken("isnot"),
+	isnot: new X.FixedToken("is not"),
 	is: new X.FixedToken("is"),
 	manyof: new X.FixedToken("many of"),
 	matches: new X.FixedToken("matches"),
