@@ -1,0 +1,100 @@
+The parser represents source as tokens stored in hierarchical tapes.
+The parser applies masks directly over tape content rather than constructing a separate disposable syntax tree.
+Tokens and masks retain object identity while edits rewrite the surrounding tape structure.
+The framework in src-framework is language-independent.
+The language definition in src-language supplies the framework with the concrete tokens and masks for Typical.
+A Language is configured with mask types, one fragmentation token, fixed tokens, physical flex-token types, and abstract flex-token types.
+ProjectLanguage registers the Typical mask classes exported by src-language/Masks.ts.
+ProjectLanguage registers the Typical fixed tokens exported by src-language/Tokens.ts.
+ProjectLanguage uses the comma token as its fragmentation token.
+ProjectLanguage begins a full-source parse by applying SpaceBodyMasks as apex masks.
+Only masks supplied to an apex application can become roots of that parse operation.
+A mask describes a reusable syntactic abstraction over a token sequence.
+Every concrete mask class extends Mask or another mask class.
+A mask declares its abstract regular expression through createSchema.
+An enclosure mask declares its enclosed content through createSchemaEnclosed.
+A mask schema is an ordered object containing fields, anchors, and optional schema options.
+The order of entries in a mask schema is the order of the syntax represented by that mask.
+Each ordinary schema field corresponds to a property on the mask instance.
+Each mask instance property assigned by parsing is initialized with X.unset in its class declaration.
+The TypeScript type of a mask property agrees with every value its corresponding schema field can produce.
+X.anchor represents required fixed-token structure without creating a value-bearing mask property.
+Anchors use the canonical FixedToken objects registered by the language.
+X.one matches exactly one value from its supplied flex-token types, mask types, or fixed-token selections.
+X.many matches zero or more values from its supplied alternatives.
+X.some matches one or more values from its supplied alternatives.
+X.lasso matches a sequence of alternatives and stores the result in one logical field.
+X.lasso greedily matches one or more consecutive values accepted by its supplied alternatives until the next value does not conform.
+X.raw captures otherwise uninterpreted token content as a RawToken.
+X.has tests for a fixed-token sequence and stores whether that sequence was present.
+A field can declare that its matched content is enclosed by parentheses, braces, brackets, quotes, fences, markup, or substitutions.
+A lasso field rejects enclosure-mask alternatives.
+A some field rejects enclosure-mask alternatives.
+The original reason that lasso and some reject enclosure-mask alternatives is unknown.
+The enclosure-mask restrictions on lasso and some are preserved unless the user explicitly approves changing them.
+A nullable field uses an explicit fixed-token anchor to determine whether its optional value is present.
+Mask sums are declared with X.sum.
+The runtime value of a mask sum is the ordered array of concrete mask constructors passed to X.sum.
+The TypeScript value type of a mask sum is the union of instances of its concrete mask constructors.
+A polymorphic schema field lists the applicable concrete mask constructors or spreads an explicit mask sum.
+Declaring a shared base mask class does not replace declaring the concrete alternatives accepted by a polymorphic field.
+Masks intended for top-level Typical source are included in SpaceBodyMasks.
+Masks intended for class bodies are included in ClassBodyMasks.
+Masks intended to behave as expressions are included in ExpressionMasks.
+Masks intended to behave as statements are included in StatementMasks.
+Masks intended to behave as parameters are included in ParameterMasks.
+Adding a concrete mask to an existing syntactic category requires adding it to the corresponding explicit mask sum.
+The ordering of concrete masks within a sum can affect which overlapping abstraction is attempted first.
+The ordering of masks within every candidate list and mask sum is a normative part of the grammar.
+When several candidate masks can match the same fragment, the first successful candidate wins.
+X.sum is a convenience for reusing an ordered sequence of concrete mask constructors.
+X.sum does not discover or expand subclasses automatically.
+Mask schemas can embed other mask patterns recursively through fields that reference mask constructors.
+MaskDescriptor compiles registered mask schemas into reusable abstract regular-expression patterns.
+MaskDescriptor resolves schema dependencies in topological order before dependent patterns are compiled.
+A mask dependency must be registered with the Language before its pattern can participate in parsing.
+The compiled matchPattern is the complete abstract regular expression for a mask.
+The compiled insidePattern is the reduced pattern embedded by other masks.
+Sparse and suffix schema options alter how a compiled mask is eligible to apply.
+A sparse mask removes the ordinary start and end anchoring from its compiled regular expression.
+A sparse mask can apply to multiple matching token subsequences within one fragment.
+Sparse masks roll matching token subsequences into masks that can subsequently be captured by higher-level masks.
+A suffix mask requires its compiled regular expression to end at the end of its fragment.
+A suffix mask does not imply any relationship with preceding syntax beyond its explicit schema fields.
+Sparse and suffix options cannot be enabled on the same mask.
+Enclosure ownership is declared explicitly so delimiters are not accidentally represented by multiple nested masks.
+Tape reading divides token content into fragments at the configured fragmentation token and qualifying newline boundaries.
+Comma and qualifying newline boundaries have interchangeable fragmentation semantics in Typical.
+An ordinary mask cannot directly span multiple fragments through one flat sequence of token fields.
+A parent mask can encompass multiple fragments by capturing child masks produced from those fragments.
+Every syntax context chooses one canonical separator form for parser cases and round-trip reconstruction.
+Function parameter lists use commas as their canonical separator form.
+Function parameters separated by commas remain on the same serialized line in canonical parser cases.
+One-of and many-of entries use newlines as their canonical separator form.
+Tape reading evicts whitespace while retaining the non-whitespace token structure used for parsing.
+Tape.readAll forces all unread tape content into fragments before complete inspection.
+Tape.scan yields either an applied mask or an unmasked token at each visible tape position.
+Tape.applyMask overlays a mask on a tape span and returns the resulting mask when application succeeds.
+Tape insertion and deletion operations can return the mask affected by the edit.
+Mask.queryFields exposes parsed field values together with their field metadata and surrounding structural tokens.
+Round-trip validation reconstructs the serialized non-whitespace token sequence from the applied masks and compares it with the expected token sequence.
+Round-trip validation does not reconstruct formatted source text or preserve insignificant whitespace.
+Round-trip reconstruction emits the canonical separator required by the surrounding syntactic context.
+A parser case without codeOut expects every serialized token in codeIn to survive the round trip.
+A parser case with codeOut expects parser recovery to produce the serialized token sequence in codeOut.
+A parser case with codeOut is not eligible for normal successful-parse HTML output.
+HTML printing consumes the same masked tape representation used by parser validation and the editor.
+Editor-injected decorations are not serialized tokens and do not belong in parser case codeIn.
+A new fixed syntax word or operator is represented by one canonical FixedToken registered in the language token table.
+A new variable lexical form is represented by a FlexToken type registered in the appropriate physical or abstract flex-token table.
+A schema that accepts a group of fixed tokens passes the fixed-token selection object rather than individual FixedToken instances to X.one, X.many, X.some, or X.lasso.
+A grammar change is complete only when its tokens, concrete masks, applicable mask sums, apex reachability, and round-trip cases agree.
+An apparently local mask change can affect every schema that embeds that mask or spreads a sum containing it.
+Overlapping mask patterns are evaluated as reusable shared abstractions rather than as rules local to one test case.
+The parser does not backtrack from a partially selected mask to try a later competing mask.
+Syntax requiring speculative parser backtracking is represented by a common abstract mask and disambiguated later in the compilation pipeline.
+A required one or some field that cannot produce its minimum value indicates invalid input or a broken grammar abstraction.
+Successful parsing leaves no serialized source token unmasked after all applicable masking layers have been applied.
+Parser fixes preserve every previously passing round-trip case unless the language specification intentionally changed.
+Generated declarations in context/api are the preferred first source for understanding framework API shape.
+Raw framework source is inspected when generated declarations do not expose the implementation behavior needed for a change.
