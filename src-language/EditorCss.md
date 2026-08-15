@@ -28,7 +28,23 @@ editorCss.add(X.tokens.fn, {
 });
 ```
 
-Selectors may be Mask constructors, FlexToken constructors, individual FixedTokens, or any category object found inside `X.tokenGroups`.
+Selectors may be Mask constructors, FlexToken constructors, individual FixedTokens, any category object found inside `X.tokenGroups`, enclosure targets, or `X.EditorRoot`.
+
+```ts
+editorCss.add(X.EditorRoot, {
+	fontFamily: "Varta, sans-serif",
+});
+
+editorCss.add(X.Enclosure, {
+	display: "inline-flex",
+});
+
+editorCss.add(X.Enclosure.paren, {
+	borderRadius: 0.25,
+});
+```
+
+Mask and FlexToken instances emit meaningful prototype-chain classes from general to specific. Framework roots such as `Mask` and `FlexToken` are omitted. For example, `TypedStableFunctionMask` emits `function stable-function typed-stable-function`. Enclosures emit the general `enclosure` class followed by their kind, such as `enclosure paren`.
 
 ## Compound selectors
 
@@ -112,7 +128,7 @@ Generate the file with:
 Fs.writeFileSync(outputPath, editorCss.toString());
 ```
 
-The language HTML printer should use the same `EditorCss` instance as the authority for semantic class conversion through `editorCss.className(target)`. The eventual integration should remove `tasks.ts` stylesheet inventory scanning; generated HTML and CSS should derive their names from this shared registry instead.
+The language HTML printer and `EditorCss` use `EditorClassifier` as their shared authority for semantic class conversion. Generated HTML uses complete classification paths, while a semantic CSS selector resolves to the target's specific class. Generated HTML and CSS therefore derive their names from the same implementation without sharing a mutable stylesheet instance.
 
 Generation fails for unknown FixedTokens, objects that are not members of `tokenGroups`, empty selectors, invalid query conditions, non-finite numbers, and numeric properties without a sanctioned unit.
 

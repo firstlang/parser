@@ -1,7 +1,7 @@
 import * as X from "./X.ts";
 
 /** */
-export type TClassifiable = X.Mask | X.Token | X.Tape | X.Fragment;
+export type TClassifiable = X.Mask | X.Token | X.Tape | X.Fragment | X.Enclosure;
 export type ClassifierFn = (node: TClassifiable) => readonly string[];
 
 /**
@@ -39,14 +39,14 @@ export class GenericHtmlPrinter
 			spans.push(span);
 		}
 		
-		const rootSpan = span(["root"], ...spans);
+		const rootSpan = span(this.classifierFn(this.tape), ...spans);
 		return toSpanStringRecursive(rootSpan);
 	}
 
 	/** */
 	private mapMaskToSpanRecursive(mask: X.Mask)
 	{
-		const classes = [toCssClass(mask.constructor.name)];
+		const classes = this.classifierFn(mask);
 		const content: TSpanChild[] = [];
 		
 		for (const maskField of mask.queryFields())
@@ -67,7 +67,7 @@ export class GenericHtmlPrinter
 				if (enc.right)
 					enclosureContent.push(this.spanifyToken(enc.right));
 				
-				content.push(span([enc.kind], ...enclosureContent));
+				content.push(span(this.classifierFn(enc), ...enclosureContent));
 			}
 			else content.push(...this.translateField(maskField));
 			

@@ -1,11 +1,7 @@
-import * as X from "../src-language/XX.ts";
+import * as X from "./XX.ts";
 
 /** A Mask constructor, FlexToken constructor, FixedToken, or object in tokenGroups. */
-export type SemanticSelector =
-	| typeof X.Mask
-	| typeof X.FlexToken
-	| X.FixedToken
-	| object;
+export type SemanticSelector = X.EditorSemanticTarget;
 
 export type SelectorPart = SemanticSelector | string;
 export type Selector = SemanticSelector | readonly SelectorPart[];
@@ -88,12 +84,11 @@ export class EditorCss
 {
 	constructor(tokenGroups: object = X.tokenGroups)
 	{
-		this.indexTokenGroups(tokenGroups);
+		this.classifier = new X.EditorClassifier(tokenGroups);
 	}
 
 	private readonly rules: AuthoredRule[] = [];
-	private readonly fixedTokenClasses = new Map<X.FixedToken, string>();
-	private readonly tokenGroupClasses = new WeakMap<object, string>();
+	private readonly classifier;
 
 	/** Adds one rule. This intentionally does not return a chaining builder. */
 	add(selector: Selector, style: Style): void
@@ -104,27 +99,7 @@ export class EditorCss
 	/** Resolves a semantic value to the class emitted for it by the HTML printer. */
 	className(target: SemanticSelector): string
 	{
-		if (target instanceof X.FixedToken)
-		{
-			const className = this.fixedTokenClasses.get(target);
-			if (!className)
-				throw new Error(`FixedToken ${JSON.stringify(target.text)} is not present in tokenGroups.`);
-			return className;
-		}
-
-		if (typeof target === "function" &&
-			(X.Mask.isType(target) || constructorExtends(target, X.FlexToken)))
-			return X.toCssClass(target.name);
-
-		if (target !== null && typeof target === "object")
-		{
-			const className = this.tokenGroupClasses.get(target);
-			if (!className)
-				throw new Error("Selector object is not a token group.");
-			return className;
-		}
-
-		throw new Error("Unsupported semantic selector.");
+		return this.classifier.className(target);
 	}
 
 	/** Converts all rules to deterministic, ordinary CSS text. */
@@ -233,31 +208,6 @@ export class EditorCss
 		return `${rule.selector} {\n${body}\n}`;
 	}
 
-	private indexTokenGroups(root: object): void
-	{
-		const visit = (node: unknown, path: readonly string[]) =>
-		{
-			if (node instanceof X.FixedToken)
-			{
-				const leaf = path.at(-1);
-				if (!leaf)
-					throw new Error("A FixedToken in tokenGroups has no property name.");
-				this.fixedTokenClasses.set(node, X.toCssClass(leaf));
-				return;
-			}
-
-			if (node !== null && typeof node === "object")
-			{
-				const name = path.at(-1);
-				if (name)
-					this.tokenGroupClasses.set(node, X.toCssClass(name));
-				for (const [key, value] of Object.entries(node))
-					visit(value, [...path, key]);
-			}
-		};
-
-		visit(root, []);
-	}
 }
 
 const remProperties = new Set<string>([
@@ -312,15 +262,6 @@ function toDashCase(property: string): string
 function isConditional(value: unknown): value is ConditionalValue<CssPrimitive>
 {
 	return value !== null && typeof value === "object" && "condition" in value && "value" in value;
-}
-
-/** FlexToken customizes instanceof, so constructor inheritance is inspected directly. */
-function constructorExtends(value: Function, base: Function): boolean
-{
-	for (let current: object | null = value; current; current = Object.getPrototypeOf(current))
-		if (current === base)
-			return true;
-	return false;
 }
 
 function indent(text: string): string

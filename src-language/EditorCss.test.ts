@@ -1,7 +1,7 @@
 import * as Assert from "node:assert/strict";
 import * as Test from "node:test";
 import * as X from "../src-language/XX.ts";
-import * as Css from "./X.ts";
+import * as Css from "./XX.ts";
 
 Test.describe("EditorCss", () =>
 {
@@ -39,6 +39,41 @@ Test.describe("EditorCss", () =>
 	align-self: start;
 }
 `);
+	});
+
+	Test.test("prints synthesized root and enclosure selectors", () =>
+	{
+		const css = new Css.EditorCss();
+		css.add(Css.EditorRoot, { display: "block" });
+		css.add(X.Enclosure, { alignItems: "stretch" });
+		css.add(X.Enclosure.paren, { borderRadius: 0.25 });
+
+		Assert.equal(css.toString(), `.root {
+	display: block;
+}
+
+.enclosure {
+	align-items: stretch;
+}
+
+.paren {
+	border-radius: 0.25rem;
+}
+`);
+	});
+
+	Test.test("HTML uses mask inheritance and normalized enclosure classes", () =>
+	{
+		const language = new X.ProjectLanguage();
+		const tape = language.createMaskedTape("fn square(value is int) is int ( return value * value )");
+		const html = new X.HtmlPrinter(tape).toHtml();
+
+		Assert.match(html, /class="root"/);
+		Assert.match(html, /class="function stable-function typed-stable-function"/);
+		Assert.match(html, /class="parameter typed-parameter"/);
+		Assert.match(html, /class="enclosure paren"/);
+		Assert.doesNotMatch(html, /class="mask(?:\s|")/);
+		Assert.doesNotMatch(html, /Enclosure\.paren/);
 	});
 
 	Test.test("prints fallback declarations, custom properties, vendor prefixes, and numeric units", () =>
