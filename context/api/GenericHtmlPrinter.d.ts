@@ -1,6 +1,6 @@
 import * as X from "./X.ts";
 /** */
-export type TClassifiable = X.Mask | X.Token | X.Tape | X.Fragment;
+export type TClassifiable = X.Mask | X.Token | X.Tape | X.Fragment | X.Enclosure;
 export type ClassifierFn = (node: TClassifiable) => readonly string[];
 /**
  * A class that is responsible for printing the specified Tape into an HTML string

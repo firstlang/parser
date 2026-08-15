@@ -10,6 +10,7 @@ const Operation = {
 	legend: "legend",
 	tests: "tests",
 	print: "print",
+	css: "css",
 	all: "all",
 };
 
@@ -17,24 +18,31 @@ export const CasePaths = {
 	cases: Url.fileURLToPath(new URL("./src-tests/cases/", import.meta.url)),
 	html: Url.fileURLToPath(new URL("./src-tests/cases-html/", import.meta.url)),
 	legend: Url.fileURLToPath(new URL("./context/legend.md", import.meta.url)),
+	editorCss: Url.fileURLToPath(new URL("./src-tests/cases-html/editor.css", import.meta.url)),
 	results: Url.fileURLToPath(new URL("./src-tests/+results.json", import.meta.url)),
 } as const;
 
 /** Runs one explicitly selected prebuild operation. */
-export async function startup(operation: string)
+export async function startup(operation: string, caseSelector?: string)
 {
 	if (!(Object.values(Operation)).includes(operation))
-		throw new Error("Expected operation to be 'legend', 'tests', 'print', or 'all'.");
+		throw new Error("Expected operation to be 'legend', 'tests', 'print', 'css', or 'all'.");
+	
 	if (operation === Operation.all)
 	{
 		const failures: unknown[] = [];
 		writeLegend();
+		writeEditorCss();
+		
 		try { await runTests(); }
 		catch (error) { failures.push(error); }
-		try { await writeCasesHtml(); }
+		
+		try { await writeCasesHtml(CasePaths.cases, CasePaths.html, caseSelector); }
 		catch (error) { failures.push(error); }
+		
 		if (failures.length > 0)
 			throw new AggregateError(failures, "One or more tasks failed.");
+		
 		return;
 	}
 
@@ -45,7 +53,10 @@ export async function startup(operation: string)
 		await runTests();
 
 	if (operation === Operation.print || operation === Operation.all)
-		await writeCasesHtml();
+		await writeCasesHtml(CasePaths.cases, CasePaths.html, caseSelector);
+
+	if (operation === Operation.css)
+		writeEditorCss();
 }
 
 /** Writes the token legend to the requested destination. */
@@ -85,6 +96,7 @@ export async function runTests(
 
 	Fs.writeFileSync(resultsPath, JSON.stringify(results, null, "\t") + "\n");
 	console.log(`Passed ${Object.keys(results).length - failures.length}; failed ${failures.length}.`);
+	
 	if (failures.length > 0)
 		throw new AggregateError(failures, "One or more parser cases failed.");
 }
@@ -92,12 +104,19 @@ export async function runTests(
 /** Validates parser cases and writes HTML only for successful complete parses. */
 export async function writeCasesHtml(
 	casesFolder = CasePaths.cases,
-	htmlFolder = CasePaths.html)
+	htmlFolder = CasePaths.html,
+	caseSelector?: string)
 {
 	let generated = 0;
 	let skipped = 0;
 	const failures: unknown[] = [];
-	for (const filePath of discoverParseCaseFiles(casesFolder))
+	const caseFiles = discoverParseCaseFiles(casesFolder)
+		.filter(filePath => !caseSelector || caseNameFromPath(filePath, casesFolder).includes(caseSelector));
+	
+	if (caseSelector && caseFiles.length === 0)
+		throw new Error(`No parser case matched: ${caseSelector}`);
+
+	for (const filePath of caseFiles)
 	{
 		const relativePath = Path.relative(casesFolder, filePath).replace(/\.case\.ts$/, ".html");
 		const htmlPath = Path.join(htmlFolder, relativePath);
@@ -131,6 +150,15 @@ export async function writeCasesHtml(
 		throw new AggregateError(failures, "One or more parser cases failed.");
 }
 
+/** Generates the editor stylesheet from its typed authoring module. */
+export function writeEditorCss(outputPath = CasePaths.editorCss)
+{
+	const editorCss = X.createEditorCss();
+	Fs.mkdirSync(Path.dirname(outputPath), { recursive: true });
+	Fs.writeFileSync(outputPath, editorCss.toString());
+	console.log("Writing editor CSS to: " + outputPath);
+}
+
 /** Finds every parser case beneath the requested root. */
 export function discoverParseCaseFiles(casesFolder = CasePaths.cases)
 {
@@ -153,8 +181,10 @@ function errorMessage(error: unknown)
 {
 	if (error instanceof Error)
 		return error.message.split("\n", 1)[0] || "Test failed";
+	
 	if (error && typeof error === "object" && "message" in error)
 		return String(error.message).split("\n", 1)[0] || "Test failed";
+	
 	return error === undefined ? "Test failed" : String(error).split("\n", 1)[0];
 }
 
@@ -165,14 +195,15 @@ function run(command: string, args: string[])
 		cwd: Url.fileURLToPath(new URL("./", import.meta.url)),
 		stdio: "inherit",
 	});
+	
 	if (result.error)
 		throw result.error;
+	
 	if (result.status !== 0)
 		throw new Error(`${command} exited with status ${result.status}.`);
 }
 
 //# Parse test tools
-
 
 /** */
 export function roundTripParseCase(parseCase: ParseCase)
@@ -234,7 +265,7 @@ function printParsedTokens(tape: X.Tape)
 			{
 				if (index > 0 && (
 					maskField.field.match.some(match => match === X.TypedParameterMask) ||
-					(mask instanceof X.GenericTypeExpressionMask &&
+						(mask instanceof X.GenericTypeExpressionMask &&
 						maskField.field.data.enclosure === X.Enclosure.paren)))
 					tokens.push(X.tokens.comma.text);
 
@@ -261,10 +292,13 @@ function printParsedTokens(tape: X.Tape)
 	tape.readAll();
 	
 	for (const cursor of tape.scan())
+	{
 		if (cursor.mask)
 			recurse(cursor.mask);
+		
 		else if (cursor.token === X.tokens.comma)
 			tokens.push(X.tokens.comma.text);
+	}
 	
 	return tokens;
 }
@@ -294,4 +328,4 @@ function createMismatchMessage(actual: string[], expected: string[])
 //# Entry point
 
 if (process.argv[1] && import.meta.url === Url.pathToFileURL(process.argv[1]).href)
-	await startup(process.argv[2] ?? Operation.all);
+	await startup(process.argv[2] ?? Operation.all, process.argv[3]);
