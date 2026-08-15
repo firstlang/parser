@@ -32,3 +32,16 @@ This document is conceptual framing only. Architecture internals (tapes, charstr
 
 The /context/api folder has generated .d.ts files that you should use to get an idea of API shape rather than looking at the raw source code itself, in the interest of token economy.
 Before adding or changing parser tokens, masks, fields, sums, tapes, or mask application behavior, read /src-framework/intents.txt and preserve every applicable architectural claim.
+
+## Explicit execution flow
+
+- Never use imports as function calls: importing a module must not perform application work.
+- Do not put executable statements, registration, mutation, I/O, or behavior-triggering construction at module scope.
+- Put initialization and configuration in named functions and call them explicitly from the task, entry point, or owning caller so execution flow is visible at the call site.
+
+## Imports and repository structure
+
+- Import project modules through their `X.ts`/`XX.ts` barrel and qualify members through the namespace. Do not cherry-pick named exports from individual files.
+- A direct named import is allowed when the file exports only one meaningful symbol and that symbol is a class, when namespace qualification would only add noise.
+- Do not create a new top-level folder unless the repository's existing structure cannot reasonably accommodate the code.
+- Top-level names beginning with `+` are intentionally ignored by Git and hold local/private workspace code. `+src-tools` is the home for local source tools; preserve that boundary and its barrel-file convention.
