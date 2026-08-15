@@ -6,3 +6,5 @@ export * from "./Masks.ts";
 export * from "./Masks.sums.ts";
 export * from "./HtmlPrinter.ts";
 export * from "./CreateLanguage.ts";
+export * from "./EditorCss.ts";
+export * from "./EditorStyles.ts";

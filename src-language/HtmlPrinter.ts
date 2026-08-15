@@ -10,8 +10,8 @@ export class HtmlPrinter
 		this.innerPrinter = new X.GenericHtmlPrinter(tape, n => this.classifier(n));
 	}
 	
-	/** Map of FixedToken text -> classification path (e.g. ["primitives", "ints", "int"]) */
-	private readonly fixedTokenClassMap;
+	/** Map of FixedToken identity -> CSS classes (e.g. ["primitives", "ints", "int"]) */
+	private readonly fixedTokenClassMap: ReadonlyMap<X.FixedToken, readonly string[]>;
 	private readonly innerPrinter;
 	
 	/** */
@@ -24,7 +24,7 @@ export class HtmlPrinter
 	private classifier(classifiable: X.TClassifiable)
 	{
 		if (classifiable instanceof X.FixedToken)
-			return (this.fixedTokenClassMap.get(classifiable.text) || []).map(c => X.toCssClass(c));
+			return this.fixedTokenClassMap.get(classifiable) || [];
 		
 		if (classifiable instanceof X.FlexToken)
 		{
@@ -38,18 +38,18 @@ export class HtmlPrinter
 
 /**
  * Recursively scans an object tree (such as tokenGroups), and returns
- * a Map that associates each FixedToken's text with the array of key
- * names that were traversed to reach it (i.e. its classification layers).
+ * a Map that associates each FixedToken with the CSS class names for the
+ * keys traversed to reach it, ordered from most general to most specific.
  */
-function buildFixedTokenClassMap(root: object): Map<string, string[]>
+export function buildFixedTokenClassMap(root: object): ReadonlyMap<X.FixedToken, readonly string[]>
 {
-	const map = new Map<string, string[]>();
+	const map = new Map<X.FixedToken, readonly string[]>();
 	
 	const visit = (node: unknown, path: string[]) =>
 	{
 		if (node instanceof X.FixedToken)
 		{
-			map.set(node.text, path);
+			map.set(node, path.map(X.toCssClass));
 			return;
 		}
 		
