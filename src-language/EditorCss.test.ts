@@ -62,6 +62,34 @@ Test.describe("EditorCss", () =>
 `);
 	});
 
+	Test.test("prints typed font-face descriptors before ordinary rules", () =>
+	{
+		const css = new Css.EditorCss();
+		css.addFontFace({
+			fontFamily: '"Varta"',
+			fontStyle: "normal",
+			fontWeight: "300 700",
+			fontDisplay: "swap",
+			src: 'url("varta.woff2") format("woff2")',
+			unicodeRange: "U+0000-00FF",
+		});
+		css.add(Css.EditorRoot, { fontFamily: '"Varta", sans-serif' });
+
+		Assert.equal(css.toString(), `@font-face {
+	font-family: "Varta";
+	font-style: normal;
+	font-weight: 300 700;
+	font-display: swap;
+	src: url("varta.woff2") format("woff2");
+	unicode-range: U+0000-00FF;
+}
+
+.root {
+	font-family: "Varta", sans-serif;
+}
+`);
+	});
+
 	Test.test("HTML uses mask inheritance and normalized enclosure classes", () =>
 	{
 		const language = new X.ProjectLanguage();
@@ -74,6 +102,49 @@ Test.describe("EditorCss", () =>
 		Assert.match(html, /class="enclosure paren"/);
 		Assert.doesNotMatch(html, /class="mask(?:\s|")/);
 		Assert.doesNotMatch(html, /Enclosure\.paren/);
+	});
+
+	Test.test("HTML classifies constants and generic type names semantically", () =>
+	{
+		const language = new X.ProjectLanguage();
+		const tape = language.createMaskedTape(
+			"fn collect(value is Result(string, int[])) is Result(string, null) ( return value )");
+		const html = new X.HtmlPrinter(tape).toHtml();
+
+		Assert.match(html, /class="named-type-expression"><span class="token entity-token">Result<\/span>/);
+		Assert.match(html, /class="token constants null">null<\/span>/);
+	});
+
+	Test.test("primitive and constant categories supply emphasis and color", () =>
+	{
+		const css = Css.createEditorCss().toString();
+
+		Assert.match(css, /\.primitives \{\n\tcolor: var\(--editor-blue\);\n\tfont-weight: 700;\n\}/);
+		Assert.match(css, /\.constants \{\n\tcolor: var\(--editor-blue\);\n\tfont-weight: 700;\n\}/);
+		Assert.doesNotMatch(css, /\.null \{/);
+		Assert.doesNotMatch(css, /\.generic-type-expression \{/);
+	});
+
+	Test.test("block loop styling does not apply to the each keyword token", () =>
+	{
+		const css = Css.createEditorCss().toString();
+
+		Assert.match(css, /\.each:not\(\.token\) \{[^}]*\tdisplay: block;/s);
+		Assert.doesNotMatch(css, /(?:^|\n)\.each \{\n\tdisplay: block;/);
+	});
+
+	Test.test("each loops receive a fieldset-like frame", () =>
+	{
+		const css = Css.createEditorCss().toString();
+
+		Assert.match(css, /\.each:not\(\.token\) \{[^}]*border-width: 0 1px 1px 0;[^}]*clip-path: inset\(-100vmax 0\);/s);
+		Assert.match(css, /\.each:not\(\.token\) > \.entity-token::after \{[^}]*left: calc\(100% \+ 0\.35rem\);[^}]*width: 100vw;/s);
+		Assert.match(css, /\.each:not\(\.token\)::before \{[^}]*border-left: 1px solid var\(--editor-line\);[^}]*top: 1\.5ch;/s);
+		Assert.match(css, /\.each > \.paren:last-child \{[^}]*margin-top: -0\.875em;/s);
+		Assert.doesNotMatch(css, /\.each:not\(\.token\) \{[^}]*border-radius/s);
+		Assert.doesNotMatch(css, /\.each:not\(\.token\) > :not\(\.enclosure\) \{[^}]*background/s);
+		Assert.doesNotMatch(css, /\.root \{[^}]*background-color/s);
+		Assert.match(css, /\.each:not\(\.token\) \{[^}]*padding: 0 0\.75rem 0\.55rem 0;/s);
 	});
 
 	Test.test("prints fallback declarations, custom properties, vendor prefixes, and numeric units", () =>

@@ -46,6 +46,23 @@ editorCss.add(X.Enclosure.paren, {
 
 Mask and FlexToken instances emit meaningful prototype-chain classes from general to specific. Framework roots such as `Mask` and `FlexToken` are omitted. For example, `TypedStableFunctionMask` emits `function stable-function typed-stable-function`. Enclosures emit the general `enclosure` class followed by their kind, such as `enclosure paren`.
 
+## Font faces
+
+Use `addFontFace()` to emit a typed `@font-face` rule. Font faces are emitted before ordinary and conditional rules in registration order.
+
+```ts
+editorCss.addFontFace({
+	fontFamily: '"Varta"',
+	fontStyle: "normal",
+	fontWeight: "300 700",
+	fontDisplay: "swap",
+	src: 'url("https://fonts.gstatic.com/example.woff2") format("woff2")',
+	unicodeRange: "U+0000-00FF",
+});
+```
+
+The `src` value is emitted unchanged, so remote URLs, data URLs, local sources, and ordered source lists remain available without separate HTML link elements.
+
 ## Compound selectors
 
 Pass an array when a selector has multiple pieces. Parts are concatenated exactly; strings must include any required whitespace.

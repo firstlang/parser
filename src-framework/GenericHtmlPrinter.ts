@@ -3,6 +3,7 @@ import * as X from "./X.ts";
 /** */
 export type TClassifiable = X.Mask | X.Token | X.Tape | X.Fragment | X.Enclosure;
 export type ClassifierFn = (node: TClassifiable) => readonly string[];
+export type SpanSeparatorFn = (parent: readonly string[], left: readonly string[], right: readonly string[], leftIndex: number, childCount: number) => string;
 
 /**
  * A class that is responsible for printing the specified Tape into an HTML string
@@ -12,14 +13,16 @@ export type ClassifierFn = (node: TClassifiable) => readonly string[];
 export class GenericHtmlPrinter
 {
 	/** */
-	constructor(tape: X.Tape, classifierFn: ClassifierFn)
+	constructor(tape: X.Tape, classifierFn: ClassifierFn, separatorFn?: SpanSeparatorFn)
 	{
 		this.tape = tape;
 		this.classifierFn = classifierFn;
+		this.separatorFn = separatorFn;
 	}
 	
 	private readonly tape: X.Tape;
 	private readonly classifierFn: ClassifierFn;
+	private readonly separatorFn?: SpanSeparatorFn;
 	
 	/** */
 	toHtml()
@@ -40,7 +43,7 @@ export class GenericHtmlPrinter
 		}
 		
 		const rootSpan = span(this.classifierFn(this.tape), ...spans);
-		return toSpanStringRecursive(rootSpan);
+		return this.separatorFn ? toSpanStringSeparated(rootSpan, this.separatorFn) : toSpanStringRecursive(rootSpan);
 	}
 
 	/** */
@@ -75,6 +78,16 @@ export class GenericHtmlPrinter
 				content.push(this.spanifyToken(fixedToken));
 		}
 		
+		if (mask instanceof X.EnclosureMask)
+		{
+			const enclosure = mask.createSchemaEnclosed().enclosure;
+			if (enclosure.left && enclosure.right)
+				return span(classes,
+					this.spanifyToken(enclosure.left),
+					...content,
+					this.spanifyToken(enclosure.right));
+		}
+
 		return span(classes, ...content);
 	}
 
@@ -169,6 +182,30 @@ function toSpanStringInline(child: TSpanChild): string
 	const cls = child.classes.length > 0 ? ` class="${child.classes.join(" ")}"` : "";
 	const inner = child.children.map(toSpanStringInline).join("");
 	return `<span${cls}>${inner}</span>`;
+}
+
+/** Renders compact HTML containing only consumer-requested separators. */
+function toSpanStringSeparated(span: ISpan, separatorFn: SpanSeparatorFn): string
+{
+	const cls = span.classes.length > 0 ? ` class="${span.classes.join(" ")}"` : "";
+	const output: string[] = [];
+	for (let index = 0; index < span.children.length; index++)
+	{
+		const child = span.children[index];
+		if (index > 0)
+		{
+			const left = span.children[index - 1];
+			output.push(separatorFn(
+				span.classes,
+				typeof left === "string" ? [] : left.classes,
+				typeof child === "string" ? [] : child.classes,
+				index - 1,
+				span.children.length,
+			));
+		}
+		output.push(typeof child === "string" ? child : toSpanStringSeparated(child, separatorFn));
+	}
+	return `<span${cls}>${output.join("")}</span>`;
 }
 
 

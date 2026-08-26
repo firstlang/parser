@@ -12,6 +12,24 @@ export interface WidthCondition
 	readonly maxWidth?: number | string;
 }
 
+/** Descriptors accepted by an authored @font-face rule. */
+export interface FontFace
+{
+	readonly fontFamily: string;
+	readonly src: string;
+	readonly fontStyle?: string;
+	readonly fontWeight?: string | number;
+	readonly fontStretch?: string;
+	readonly fontDisplay?: "auto" | "block" | "swap" | "fallback" | "optional";
+	readonly unicodeRange?: string;
+	readonly fontFeatureSettings?: string;
+	readonly fontVariationSettings?: string;
+	readonly ascentOverride?: string;
+	readonly descentOverride?: string;
+	readonly lineGapOverride?: string;
+	readonly sizeAdjust?: string;
+}
+
 interface ConditionalValue<T>
 {
 	readonly condition: ContainerCondition | ScreenCondition;
@@ -88,7 +106,14 @@ export class EditorCss
 	}
 
 	private readonly rules: AuthoredRule[] = [];
+	private readonly fontFaces: FontFace[] = [];
 	private readonly classifier;
+
+	/** Adds one @font-face rule in registration order. */
+	addFontFace(fontFace: FontFace): void
+	{
+		this.fontFaces.push(fontFace);
+	}
 
 	/** Adds one rule. This intentionally does not return a chaining builder. */
 	add(selector: Selector, style: Style): void
@@ -141,6 +166,15 @@ export class EditorCss
 		}
 
 		const sections: string[] = [];
+		for (const fontFace of this.fontFaces)
+		{
+			const declarations = Object.entries(fontFace).map(([property, value]) => ({
+				property: toDashCase(property),
+				value: String(value),
+			}));
+			sections.push(this.printRule({ selector: "@font-face", declarations }));
+		}
+
 		for (const [className] of containers)
 			sections.push(this.printRule({ selector: `.${className}`, declarations: [
 				{ property: "container-name", value: className },
