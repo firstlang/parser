@@ -58,7 +58,7 @@ export type PrimitiveTypeKind = (typeof PrimitiveTypeKind)[keyof typeof Primitiv
 /** Atomic fixed-token types accepted in unions and ordinary annotations. */
 export const BasicTypeKind = {
 	...PrimitiveTypeKind,
-	null: X.tokenGroups.values.null,
+	...X.tokenGroups.constants,
 } as const;
 export type BasicTypeKind = (typeof BasicTypeKind)[keyof typeof BasicTypeKind];
 

@@ -112,6 +112,12 @@ export class OperatorsOverloadableToken extends OperatorToken { }
 export class SuffixToken extends X.FixedToken { }
 export class PrefixToken extends X.FixedToken { }
 
+const constants = Object.freeze({
+	infinity: new X.FixedToken("infinity"),
+	nan: new X.FixedToken("nan"),
+	null: new X.FixedToken("null"),
+});
+
 const primitives = Object.freeze({
 	ints: Object.freeze({
 		int: new X.FixedToken("int"),
@@ -406,12 +412,6 @@ const words = Object.freeze({
 	worker: new X.FixedToken("worker"),
 });
 
-const values = Object.freeze({
-	infinity: new X.FixedToken("infinity"),
-	nan: new X.FixedToken("nan"),
-	null: new X.FixedToken("null"),
-});
-
 const symbols = Object.freeze({
 	colon: new X.FixedToken(":"),
 	comma: new X.FixedToken(","),
@@ -511,11 +511,17 @@ const yields = Object.freeze({
 	yield8: new X.FixedToken("yield.8"),
 });
 
+/** Delimiter tokens exposed as individually styleable editor targets. */
+const parenDelimiters = Object.freeze({
+	parenLeft: X.Enclosure.paren.left,
+	parenRight: X.Enclosure.paren.right,
+});
+
 /** */
 export const tokenGroups = Object.freeze({
 	primitives,
+	constants,
 	words,
-	values,
 	symbols,
 	assigners,
 	operators,
@@ -524,6 +530,7 @@ export const tokenGroups = Object.freeze({
 	yields,
 	suffixes,
 	prefixes,
+	parenDelimiters,
 });
 
 /** */
@@ -534,7 +541,7 @@ export const tokens = Object.freeze({
 	...primitives.bigs,
 	...primitives.others,
 	...words,
-	...values,
+	...constants,
 	...symbols,
 	...assigners,
 	...operators.sealed,

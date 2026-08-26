@@ -147,11 +147,11 @@ export class TypeIntersectionExpressionMask extends X.Mask
 /** `Type(T, U)` */
 export class GenericTypeExpressionMask extends X.Mask
 {
-	readonly name: X.EntityToken = X.unset;
+	readonly name: X.NamedTypeExpressionMask = X.unset;
 	readonly arguments: X.TypeMasks[] = X.unset;
 	
 	createSchema(): X.TMaskSchema { return {
-		name: X.one(X.EntityToken),
+		name: X.one(X.NamedTypeExpressionMask),
 		arguments: X.some(...X.TypeMasks).paren(),
 	}}
 }
