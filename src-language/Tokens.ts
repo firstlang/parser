@@ -369,6 +369,7 @@ const primitives = Object.freeze({
 });
 
 const words = Object.freeze({
+	abstract: new X.FixedToken("abstract"),
 	aliasof: new X.FixedToken("alias of"),
 	always: new X.FixedToken("always"),
 	analyzer: new X.FixedToken("analyzer"),
