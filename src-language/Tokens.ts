@@ -14,6 +14,18 @@ export class IntegerToken extends LiteralToken
 /** Abstract base class for FlexTokens that are potential particles. */
 export abstract class ParticleLiteralToken extends LiteralToken { }
 
+/** An identifier whose first character is lowercase. Used for runtime names. */
+export class LowercaseEntityToken extends X.EntityToken
+{
+	static readonly pattern = /^[a-z][a-zA-Z0-9_]*$/u;
+}
+
+/** An identifier whose first character is uppercase. Used for structural names. */
+export class UppercaseEntityToken extends X.EntityToken
+{
+	static readonly pattern = /^[A-Z][a-zA-Z0-9_]*$/u;
+}
+
 export class UnsignedIntegerToken extends ParticleLiteralToken
 {
 	//static readonly pattern = /[1-9][0-9]*u/u;
@@ -59,7 +71,8 @@ export class RegexToken extends ParticleLiteralToken
 }
 
 export const flexTokens = Object.freeze({
-	entity: X.EntityToken,
+	lowercaseEntity: LowercaseEntityToken,
+	uppercaseEntity: UppercaseEntityToken,
 	
 	// Literals - Particles
 	quantity: QuantityToken,
@@ -384,7 +397,6 @@ const words = Object.freeze({
 	export: new X.FixedToken("export"),
 	expose: new X.FixedToken("expose"),
 	extend: new X.FixedToken("extend"),
-	fn: new X.FixedToken("fn"),
 	from: new X.FixedToken("from"),
 	ghost: new X.FixedToken("ghost"),
 	interface: new X.FixedToken("interface"),

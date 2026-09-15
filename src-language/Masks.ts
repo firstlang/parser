@@ -343,12 +343,11 @@ export class GhostFunctionMask extends FunctionMask
 /** */
 export class StableFunctionMask extends FunctionMask
 {
-	readonly name: X.EntityToken = X.unset;
+	readonly name: X.LowercaseEntityToken = X.unset;
 	readonly signature: ParameterMask[] = X.unset;
 	
 	createSchema() { return {
-		...X.anchor(X.tokens.fn),
-		name: X.one(X.EntityToken),
+		name: X.one(X.LowercaseEntityToken),
 		signature: X.many(...X.ParameterMasks).paren(),
 		body: reuse.body,
 	}}
@@ -360,8 +359,7 @@ export class TypedStableFunctionMask extends X.StableFunctionMask
 	readonly returnType: X.TypeMasks = X.unset;
 	
 	createSchema() { return {
-		...X.anchor(X.tokens.fn),
-		name: X.one(X.EntityToken),
+		name: X.one(X.LowercaseEntityToken),
 		signature: X.many(...X.ParameterMasks).paren(),
 		...X.anchor(X.tokens.is),
 		returnType: reuse.type,
@@ -447,12 +445,12 @@ export class WorkerMask extends X.Mask
 /** */
 export class ClassMask extends X.Mask
 {
-	readonly name: X.EntityToken = X.unset;
+	readonly name: X.UppercaseEntityToken = X.unset;
 	readonly supers: X.EntityToken[] | null = X.unset;
 	readonly members: X.ClassBodyMasks[] = X.unset;
 		
 	createSchema() { return {
-		name: X.one(X.EntityToken),
+		name: X.one(X.UppercaseEntityToken),
 		supers: X.many(X.EntityToken).nullable(X.tokens.is),
 		members: X.many(...X.ClassBodyMasks).paren()
 	}}

@@ -115,7 +115,13 @@ function tryApplyMask(
 			}
 			
 			const lens = matchTarget.slice(group.start, group.end);
-			mask[group.name] = getFieldValue(lens, field, depth + 1);
+			const value = getFieldValue(lens, field, depth + 1);
+			// Proxy characters represent a token family. Validate specialized flex
+			// fields after the structural match before committing the mask.
+			if (value == null)
+				return null;
+			
+			mask[group.name] = value;
 		}
 		
 		const maskFrom = applyFrom ?? matches.from;

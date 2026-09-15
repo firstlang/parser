@@ -20,6 +20,13 @@ export const Proxy = new class
 		charProxyReverseMap.set(char, proxyable);
 		return char;
 	}
+
+	/** Gives a specialized token type the proxy of its general token type. */
+	alias(proxyable: TProxyable, target: TProxyable)
+	{
+		const char = this.get(target);
+		charProxyMap.set(proxyable, char);
+	}
 	
 	/** Returns the proxy character associated with the specified object. */
 	get(proxyable: TProxyable)

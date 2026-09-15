@@ -41,7 +41,6 @@ export class Language
 			{},
 			spec.physicalFlexTokens,
 			{
-				entityToken: X.EntityToken,
 				spaceToken: X.SpaceToken,
 				newlineToken: X.NewlineToken,
 				markupOpenToken: X.MarkupOpenToken,
@@ -49,11 +48,18 @@ export class Language
 				markupEndToken: X.MarkupEndToken,
 				markupAttrStartToken: X.MarkupAttrStartToken,
 			});
+
+		const hasEntitySubclass = Object.values(spec.physicalFlexTokens)
+			.some(type => X.EntityToken.prototype.isPrototypeOf(type.prototype));
+		
+		if (!hasEntitySubclass)
+			spec.physicalFlexTokens.entityToken = X.EntityToken;
 		
 		spec.abstractFlexTokens = Object.assign(
 			{},
 			spec.abstractFlexTokens,
 			{
+				entityToken: X.EntityToken,
 				whitespaceToken: X.WhitespaceToken,
 				flexDelimiterToken: X.FlexDelimiterToken,
 			}
@@ -164,7 +170,12 @@ function createLanguageProxies(spec: ILanguageSpec)
 		X.Proxy.define(abstractFlexType);
 	
 	for (const flexType of Object.values(spec.physicalFlexTokens))
-		X.Proxy.define(flexType);
+	{
+		if (X.EntityToken.prototype.isPrototypeOf(flexType.prototype))
+			X.Proxy.alias(flexType, X.EntityToken);
+		else
+			X.Proxy.define(flexType);
+	}
 	
 	for (const maskType of spec.masks)
 		X.Proxy.define(maskType);

@@ -11,7 +11,6 @@ Test.describe("EditorCss", () =>
 		css.add(X.TypedParameterMask, { display: "inline-flex" });
 		css.add(X.EntityToken, { color: "var(--entity)" });
 		css.add(X.tokenGroups.words, { fontWeight: 600 });
-		css.add(X.tokens.fn, { opacity: 0.8 });
 		css.add([X.TypedStableFunctionMask, "::before"], { content: '\"\"' });
 		css.add([X.TypedStableFunctionMask, " > ", X.TypedParameterMask], { alignSelf: "start" });
 
@@ -25,10 +24,6 @@ Test.describe("EditorCss", () =>
 
 .words {
 	font-weight: 600;
-}
-
-.fn {
-	opacity: 0.8;
 }
 
 .typed-stable-function::before {
@@ -93,7 +88,7 @@ Test.describe("EditorCss", () =>
 	Test.test("HTML uses mask inheritance and normalized enclosure classes", () =>
 	{
 		const language = new X.ProjectLanguage();
-		const tape = language.createMaskedTape("fn square(value is int) is int ( return value * value )");
+		const tape = language.createMaskedTape("square(value is int) is int ( return value * value )");
 		const html = new X.HtmlPrinter(tape).toHtml();
 
 		Assert.match(html, /class="root"/);
@@ -104,14 +99,24 @@ Test.describe("EditorCss", () =>
 		Assert.doesNotMatch(html, /Enclosure\.paren/);
 	});
 
+	Test.test("stable functions use lowercase names while structural declarations use uppercase names", () =>
+	{
+		const language = new X.ProjectLanguage();
+		const functionTape = language.createMaskedTape("greet() ()");
+		const classTape = language.createMaskedTape("Greeting ()");
+
+		Assert.ok(functionTape.at(0) instanceof X.StableFunctionMask);
+		Assert.ok(classTape.at(0) instanceof X.ClassMask);
+	});
+
 	Test.test("HTML classifies constants and generic type names semantically", () =>
 	{
 		const language = new X.ProjectLanguage();
 		const tape = language.createMaskedTape(
-			"fn collect(value is Result(string, int[])) is Result(string, null) ( return value )");
+			"collect(value is Result(string, int[])) is Result(string, null) ( return value )");
 		const html = new X.HtmlPrinter(tape).toHtml();
 
-		Assert.match(html, /class="named-type-expression"><span class="token entity-token">Result<\/span>/);
+		Assert.match(html, /class="named-type-expression"><span class="token entity-token uppercase-entity-token">Result<\/span>/);
 		Assert.match(html, /class="token constants null">null<\/span>/);
 	});
 

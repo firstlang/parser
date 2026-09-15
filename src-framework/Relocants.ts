@@ -51,7 +51,7 @@ export class NewlineToken extends WhitespaceToken
 }
 
 /** */
-export class EntityToken extends X.FlexToken
+export abstract class EntityToken extends X.FlexToken
 { 
 	static readonly pattern = /[a-zA-Z]{1,}[a-zA-Z0-9_]{0,}/u;
 }

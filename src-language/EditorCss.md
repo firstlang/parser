@@ -23,9 +23,6 @@ editorCss.add(X.tokenGroups.words, {
 	color: "var(--keyword)",
 });
 
-editorCss.add(X.tokens.fn, {
-	fontWeight: 600,
-});
 ```
 
 Selectors may be Mask constructors, FlexToken constructors, individual FixedTokens, any category object found inside `X.tokenGroups`, enclosure targets, or `X.EditorRoot`.
