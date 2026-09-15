@@ -78,10 +78,6 @@ export function createEditorCss()
 		color: "var(--editor-muted)",
 	});
 
-	editorCss.add(X.tokens.fn, {
-		color: "var(--editor-blue)",
-	});
-
 	editorCss.add(X.tokens.return, {
 		color: "var(--editor-blue)",
 	});

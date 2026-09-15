@@ -200,8 +200,10 @@ export class EditorCss
 
 		const resolved = parts.map(part =>
 			typeof part === "string" ? part : `.${this.className(part)}`).join("");
+		
 		if (resolved.trim().length === 0)
 			throw new Error("A selector cannot resolve to an empty string.");
+		
 		return resolved;
 	}
 
@@ -222,10 +224,13 @@ export class EditorCss
 	private printCondition(condition: ContainerCondition | ScreenCondition): string
 	{
 		const tests: string[] = [];
+		
 		if (condition.minWidth !== undefined)
 			tests.push(`(min-width: ${serializeWidth(condition.minWidth)})`);
+		
 		if (condition.maxWidth !== undefined)
 			tests.push(`(max-width: ${serializeWidth(condition.maxWidth)})`);
+		
 		if (tests.length === 0)
 			throw new Error(`${condition.kind} condition must specify minWidth or maxWidth.`);
 
@@ -267,12 +272,16 @@ function serializeNumber(property: string, value: number): string
 {
 	if (!Number.isFinite(value))
 		throw new Error(`${property} must have a finite numeric value.`);
+	
 	if (value === 0)
 		return "0";
+	
 	if (remProperties.has(property))
 		return `${value}rem`;
+	
 	if (unitlessProperties.has(property))
 		return String(value);
+	
 	throw new Error(`Numeric values have no sanctioned unit for ${property}; use a string.`);
 }
 
@@ -280,8 +289,10 @@ function serializeWidth(value: number | string): string
 {
 	if (typeof value === "string")
 		return value;
+	
 	if (!Number.isFinite(value))
 		throw new Error("Query widths must be finite.");
+	
 	return value === 0 ? "0" : `${value}rem`;
 }
 
@@ -289,6 +300,7 @@ function toDashCase(property: string): string
 {
 	if (property.startsWith("--"))
 		return property;
+	
 	const dashed = property.replace(/[A-Z]/g, character => `-${character.toLowerCase()}`);
 	return /^(webkit|moz|ms)-/.test(dashed) ? `-${dashed}` : dashed;
 }
