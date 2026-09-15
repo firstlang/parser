@@ -410,7 +410,7 @@ const words = Object.freeze({
 	proof: new X.FixedToken("proof"),
 	ref: new X.FixedToken("ref"),
 	space: new X.FixedToken("space"),
-	start: new X.FixedToken("start"),
+	startup: new X.FixedToken("startup"),
 	step: new X.FixedToken("step"),
 	strong: new X.FixedToken("strong"),
 	super: new X.FixedToken("super"),

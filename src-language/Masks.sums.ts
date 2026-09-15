@@ -66,7 +66,7 @@ export const SpaceBodyMasks = X.sum(
 	X.ManyOfMask,
 	X.AliasMask,
 	X.TestGroupMask,
-	X.StartFunctionMask,
+	X.StartupFunctionMask,
 	X.BuildFunctionMask,
 );
 

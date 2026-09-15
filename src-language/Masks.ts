@@ -377,12 +377,12 @@ export class BuildFunctionMask extends FunctionMask
 }
 
 /** */
-export class StartFunctionMask extends FunctionMask
+export class StartupFunctionMask extends FunctionMask
 {
 	readonly isAnalyzer: boolean = X.unset;
 	
 	createSchema() { return {
-		...X.anchor(X.tokens.start),
+		...X.anchor(X.tokens.startup),
 		isAnalyzer: X.has(X.tokens.analyzer),
 		body: reuse.body,
 	}}

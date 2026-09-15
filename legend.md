@@ -869,15 +869,15 @@
 - **Debug Full Pattern:** `^(?<name>[ EntityToken ])(?<signature> paren )(?<body> paren )$`
 - **Debug Fast Pattern:** `[ EntityToken ] paren  paren `
 
-### StartFunctionMask
+### StartupFunctionMask
 
 - **Character:** ❘
 - **Code:** 10072
 - **Unicode:** U+2758
 - **Full Pattern:** `^⚯(?<isAnalyzer>⚗?)(?<body>▢)$`
 - **Fast Pattern:** `⚯⚗?▢`
-- **Debug Full Pattern:** `^ start (?<isAnalyzer> analyzer ?)(?<body> paren )$`
-- **Debug Fast Pattern:** ` start  analyzer ? paren `
+- **Debug Full Pattern:** `^ startup (?<isAnalyzer> analyzer ?)(?<body> paren )$`
+- **Debug Fast Pattern:** ` startup  analyzer ? paren `
 
 ### TernaryExpressionMask
 
