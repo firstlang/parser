@@ -2,10 +2,10 @@ The parser represents source as tokens stored in hierarchical tapes.
 The parser applies masks directly over tape content rather than constructing a separate disposable syntax tree.
 Tokens and masks retain object identity while edits rewrite the surrounding tape structure.
 The framework in src-framework is language-independent.
-The language definition in src-language supplies the framework with the concrete tokens and masks for Typical.
+The language definition in src-language supplies the framework with the concrete tokens and masks for First.
 A Language is configured with mask types, one fragmentation token, fixed tokens, physical flex-token types, and abstract flex-token types.
-ProjectLanguage registers the Typical mask classes exported by src-language/Masks.ts.
-ProjectLanguage registers the Typical fixed tokens exported by src-language/Tokens.ts.
+ProjectLanguage registers the First mask classes exported by src-language/Masks.ts.
+ProjectLanguage registers the First fixed tokens exported by src-language/Tokens.ts.
 ProjectLanguage uses the comma token as its fragmentation token.
 ProjectLanguage begins a full-source parse by applying SpaceBodyMasks as apex masks.
 Only masks supplied to an apex application can become roots of that parse operation.
@@ -38,7 +38,7 @@ The runtime value of a mask sum is the ordered array of concrete mask constructo
 The TypeScript value type of a mask sum is the union of instances of its concrete mask constructors.
 A polymorphic schema field lists the applicable concrete mask constructors or spreads an explicit mask sum.
 Declaring a shared base mask class does not replace declaring the concrete alternatives accepted by a polymorphic field.
-Masks intended for top-level Typical source are included in SpaceBodyMasks.
+Masks intended for top-level First source are included in SpaceBodyMasks.
 Masks intended for class bodies are included in ClassBodyMasks.
 Masks intended to behave as expressions are included in ExpressionMasks.
 Masks intended to behave as statements are included in StatementMasks.
@@ -64,7 +64,7 @@ A suffix mask does not imply any relationship with preceding syntax beyond its e
 Sparse and suffix options cannot be enabled on the same mask.
 Enclosure ownership is declared explicitly so delimiters are not accidentally represented by multiple nested masks.
 Tape reading divides token content into fragments at the configured fragmentation token and qualifying newline boundaries.
-Comma and qualifying newline boundaries have interchangeable fragmentation semantics in Typical.
+Comma and qualifying newline boundaries have interchangeable fragmentation semantics in First.
 An ordinary mask cannot directly span multiple fragments through one flat sequence of token fields.
 A parent mask can encompass multiple fragments by capturing child masks produced from those fragments.
 Every syntax context chooses one canonical separator form for parser cases and round-trip reconstruction.

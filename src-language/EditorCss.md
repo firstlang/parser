@@ -1,6 +1,6 @@
 # Editor CSS API
 
-`EditorCss.ts` is the authoring and serialization layer for Typical's generated editor stylesheet. It stores semantic selectors rather than handwritten class names and emits ordinary CSS.
+`EditorCss.ts` is the authoring and serialization layer for First's generated editor stylesheet. It stores semantic selectors rather than handwritten class names and emits ordinary CSS.
 
 ## Basic use
 
