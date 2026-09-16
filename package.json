@@ -7,8 +7,8 @@
 	"keywords": [
 		"editor",
 		"parser",
-		"compiler",
-		"languages"
+		"languages",
+		"first"
 	],
 	"type": "module",
 	"scripts": {
