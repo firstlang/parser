@@ -34,6 +34,7 @@ export class Fragment
 		const len = tokensToOwn.length;
 		this._tokens = tokensToOwn;
 		this.tokenSize = len;
+		this.maskedSize = len;
 		this.unmaskedTokenCount = len;
 		
 		// Populate the indexes with the sentinel to indicate that the 
@@ -97,7 +98,7 @@ export class Fragment
 		if (begin < 0 || end < 0)
 			throw "Negative indexing not supported.";
 		
-		return new X.Lens(this, begin, end);
+		return new X.Lens(this, this.toTokenRelative(begin), this.toTokenRelative(end));
 	}
 	
 	/**
@@ -105,13 +106,15 @@ export class Fragment
 	 */
 	applyMask(mask: X.Mask, from: number, to: number)
 	{
+		from = this.toTokenRelative(from);
+		to = this.toTokenRelative(to);
 		if (from < 0 || to > this._tokens.length || from >= to)
 			throw new RangeError(`Tape.replace(): range [${from}, ${to}) is invalid.`);
 		
 		const evictLength = to - from;
 		let evicted: X.Mask | null = null;
 		for (let i = -1; ++i < evictLength;)
-			evicted = this.evictMaskAt(from);
+			evicted = this.evictMaskAt(from + i) || evicted;
 		
 		// Push the mask to the end.
 		// No that that this can create masks that are out of order
@@ -124,14 +127,10 @@ export class Fragment
 		const injected = new Array(len).fill(maskIndexPointer);
 		this.indexes.splice(from, len, ...injected);
 		
-		// There's always at least 1 new item being inserted, so we
-		// decrement maskedSize by 1 - the size of the masked range.
-		(this as X.TWritable<Fragment>).maskedSize -= (to - from) - 1;
-		
-		// Update the cached value fields
+		// Recount after evictions, which may expose tokens outside the new span.
 		this._charstringCache = "";
-		(this as X.TWritable<Fragment>).maskedSize++;
-		(this as X.TWritable<Fragment>).unmaskedTokenCount -= len;
+		(this as X.TWritable<Fragment>).maskedSize = [...this.scan()].length;
+		(this as X.TWritable<Fragment>).unmaskedTokenCount = this.indexes.filter(index => index === TOKEN_SENTINEL).length;
 		
 		return evicted;
 	}
@@ -415,6 +414,9 @@ export class Fragment
 				this.indexes[i] = TOKEN_SENTINEL;
 		
 		this.masks.splice(maskIndex, 1);
+		for (let i = 0; i < this.indexes.length; i++)
+			if (this.indexes[i] !== TOKEN_SENTINEL && this.indexes[i] > maskIndex)
+				this.indexes[i]--;
 		
 		this._charstringCache = "";
 		return maskEvicted;

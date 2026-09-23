@@ -62,7 +62,8 @@ export const SpaceBodyMasks = X.sum(
 	X.DeclareMask,
 	X.WorkerMask,
 	X.OneOfMask,
-	X.OneValueOfMask,
+	X.OneCaseOfMask,
+	X.SelectionCompositionMask,
 	X.ManyOfMask,
 	X.AliasMask,
 	X.TestGroupMask,
@@ -72,6 +73,11 @@ export const SpaceBodyMasks = X.sum(
 
 export type ClassBodyMasks = X.Sum<typeof ClassBodyMasks>;
 export const ClassBodyMasks = X.sum(
+	X.OneOfMask,
+	X.ManyOfMask,
+	X.OneCaseOfMask,
+	X.SelectionCompositionMask,
+	X.SimpleAssignmentMask,
 	X.CommentMask,
 	X.DeclareMask,
 	X.ConstructorFunctionMask,
@@ -84,6 +90,8 @@ export const ClassBodyMasks = X.sum(
 
 export type ExpressionMasks = X.Sum<typeof ExpressionMasks>;
 export const ExpressionMasks = X.sum(
+	X.AttestationExpressionMask,
+	X.SelectionLiteralMask,
 	X.TernaryExpressionMask,
 	X.EachMask,
 	X.MatchesMask,

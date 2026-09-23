@@ -118,8 +118,9 @@ export class Lens
 	applyMask(mask: X.Mask, from: number, to: number)
 	{
 		this.checkLamports();
-		from += this.sliceBegin;
-		to += this.sliceBegin;
+		const begin = this.sliceBeginMaskRelative;
+		from += begin;
+		to += begin;
 		return this.source.applyMask(mask, from, to);
 	}
 	

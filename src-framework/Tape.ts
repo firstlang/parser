@@ -48,6 +48,13 @@ export class Tape
 	
 	/** */
 	private readonly unreadTokens: (X.Token | X.Tape)[] = [];
+
+	/** Visits all fragments, including enclosure contents already read for matching. */
+	* readFragments(): IterableIterator<X.Fragment>
+	{
+		this.readAll();
+		yield* this.fragments;
+	}
 	
 	/**
 	 * Reads the tape into fragments, evicting whitespace on discovery.

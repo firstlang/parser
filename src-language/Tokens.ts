@@ -126,6 +126,8 @@ export class SuffixToken extends X.FixedToken { }
 export class PrefixToken extends X.FixedToken { }
 
 const constants = Object.freeze({
+	true: new X.FixedToken("true"),
+	false: new X.FixedToken("false"),
 	infinity: new X.FixedToken("infinity"),
 	nan: new X.FixedToken("nan"),
 	null: new X.FixedToken("null"),
@@ -405,7 +407,7 @@ const words = Object.freeze({
 	manyof: new X.FixedToken("many of"),
 	matches: new X.FixedToken("matches"),
 	oneof: new X.FixedToken("one of"),
-	onevalueof: new X.FixedToken("one value of"),
+	onecaseof: new X.FixedToken("one case of"),
 	or: new X.FixedToken("or"),
 	proof: new X.FixedToken("proof"),
 	ref: new X.FixedToken("ref"),

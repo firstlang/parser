@@ -470,44 +470,241 @@ export class AliasMask extends X.Mask
 	}}
 }
 
-/** */
+/** A literal string without runtime interpolation. */
+export class SelectionStringMask extends X.Mask
+{
+	readonly content: X.RawToken = X.unset;
+
+	createSchema() { return {
+		content: X.raw().quote(),
+	}}
+}
+
+/** Keeps enclosed literals out of lasso fields used by expression masks. */
+export class SelectionLiteralMask extends X.Mask
+{
+	readonly value: X.SelectionStringMask | X.SelectionArrayMask | X.SelectionObjectMask | X.NegativeSelectionLiteralMask | X.FixedToken = X.unset;
+
+	createSchema() { return {
+		value: X.one(X.NegativeSelectionLiteralMask, X.SelectionStringMask, X.SelectionArrayMask, X.SelectionObjectMask, X.tokenGroups.constants),
+	}}
+}
+
+export class NegativeSelectionLiteralMask extends X.Mask
+{
+	readonly value: X.LiteralToken = X.unset;
+
+	createSchema() { return {
+		...X.anchor(X.tokens.subtract),
+		value: X.one(X.IntegerToken, X.DecimalToken, X.Float32Token, X.Float64Token, X.Float128Token),
+	}}
+}
+
+/** Literal aggregates use the same restricted values as selection entries. */
+export class SelectionArrayMask extends X.EnclosureMask
+{
+	readonly content: X.SelectionValueMask[] = X.unset;
+
+	createSchemaEnclosed() { return {
+		enclosure: X.Enclosure.bracket,
+		content: X.many(X.SelectionValueMask),
+	}}
+}
+
+export class SelectionObjectMask extends X.EnclosureMask
+{
+	readonly content: X.SelectionNamedEntryMask[] = X.unset;
+
+	createSchemaEnclosed() { return {
+		enclosure: X.Enclosure.brace,
+		content: X.many(X.SelectionNamedEntryMask),
+	}}
+}
+
+export class SelectionReferencePartMask extends X.Mask
+{
+	readonly name: X.EntityToken = X.unset;
+
+	createSchema() { return {
+		...X.anchor(X.tokens.dot),
+		name: X.one(X.EntityToken),
+	}}
+}
+
+export class SelectionReferenceMask extends X.Mask
+{
+	readonly origin: X.EntityToken | X.FixedToken = X.unset;
+	readonly parts: X.SelectionReferencePartMask[] = X.unset;
+
+	createSchema() { return {
+		origin: X.one(X.EntityToken, { this: X.tokens.this }),
+		parts: X.some(X.SelectionReferencePartMask),
+	}}
+}
+
+/** Direct values only; calls, arithmetic and spreads are not entry expressions. */
+export class SelectionValueMask extends X.Mask
+{
+	readonly value: X.Mask | X.FlexToken | X.FixedToken = X.unset;
+
+	createSchema(): X.TMaskSchema { return {
+		value: X.one(
+			X.SelectionReferenceMask,
+			X.NegativeSelectionLiteralMask,
+			X.SelectionStringMask,
+			X.SelectionArrayMask,
+			X.SelectionObjectMask,
+			X.IntegerToken, X.DecimalToken, X.UnsignedIntegerToken,
+			X.Float32Token, X.Float64Token, X.Float128Token,
+			X.HexToken, X.CharToken, X.QuantityToken,
+			X.EntityToken,
+			X.BasicTypeKind),
+	}}
+}
+
+export class SelectionNamedEntryMask extends X.Mask
+{
+	readonly name: X.LowercaseEntityToken = X.unset;
+	readonly value: X.SelectionValueMask[] = X.unset;
+
+	createSchema() { return {
+		name: X.one(X.LowercaseEntityToken),
+		...X.anchor(X.tokens.basicAssign),
+		value: X.lasso(X.SelectionValueMask),
+	}}
+}
+
+export class OneOfBodyMask extends X.Mask
+{
+	readonly elements: (X.SelectionNamedEntryMask | X.SelectionValueMask)[] = X.unset;
+
+	createSchema() { return {
+		...X.anchor(X.tokens.oneof),
+		elements: X.many(X.SelectionNamedEntryMask, X.SelectionValueMask).paren(),
+	}}
+}
+
+export class ManyOfBodyMask extends X.Mask
+{
+	readonly elements: (X.SelectionNamedEntryMask | X.LowercaseEntityToken)[] = X.unset;
+
+	createSchema() { return {
+		...X.anchor(X.tokens.manyof),
+		elements: X.many(X.SelectionNamedEntryMask, X.LowercaseEntityToken).paren(),
+	}}
+}
+
+export class SelectionCaseMask extends X.Mask
+{
+	readonly name: X.LowercaseEntityToken = X.unset;
+	readonly parameters: X.TypedParameterMask[] = X.unset;
+
+	createSchema() { return {
+		name: X.one(X.LowercaseEntityToken),
+		parameters: X.many(X.TypedParameterMask).paren(),
+	}}
+}
+
+export class OneCaseOfBodyMask extends X.Mask
+{
+	readonly elements: X.SelectionCaseMask[] = X.unset;
+
+	createSchema() { return {
+		...X.anchor(X.tokens.onecaseof),
+		elements: X.many(X.SelectionCaseMask).paren(),
+	}}
+}
+
 export class OneOfMask extends X.Mask
 {
-	readonly name: X.EntityToken = X.unset;
-	readonly elements: (string | ConstantExpressionMask)[] = X.unset;
-	
+	readonly name: X.UppercaseEntityToken = X.unset;
+	readonly body: X.OneOfBodyMask = X.unset;
+
 	createSchema() { return {
-		name: X.one(X.EntityToken),
-		...X.anchor(X.tokens.is, X.tokens.oneof),
-		elements: X.many(X.EntityToken, ConstantExpressionMask).paren()
+		name: X.one(X.UppercaseEntityToken),
+		...X.anchor(X.tokens.is),
+		body: X.one(X.OneOfBodyMask),
 	}}
 }
 
-/** */
-export class OneValueOfMask extends X.Mask
-{
-	readonly name: X.EntityToken = X.unset;
-	readonly access: X.VisibilityKind = X.unset;
-	readonly elements: ConstantExpressionMask[] = X.unset;
-	
-	createSchema() { return {
-		name: X.one(X.EntityToken),
-		...X.anchor(X.tokens.is, X.tokens.onevalueof),
-		elements: X.many(ConstantExpressionMask).paren()
-	}}
-}
-
-/** */
 export class ManyOfMask extends X.Mask
 {
-	readonly name: X.EntityToken = X.unset;
-	readonly access: X.VisibilityKind = X.unset;
-	readonly elements: (string | ConstantExpressionMask)[] = X.unset;
-	
+	readonly name: X.UppercaseEntityToken = X.unset;
+	readonly body: X.ManyOfBodyMask = X.unset;
+
 	createSchema() { return {
-		name: X.one(X.EntityToken),
-		...X.anchor(X.tokens.is, X.tokens.manyof),
-		elements: X.many(X.EntityToken, X.ConstantExpressionMask).paren()
+		name: X.one(X.UppercaseEntityToken),
+		...X.anchor(X.tokens.is),
+		body: X.one(X.ManyOfBodyMask),
+	}}
+}
+
+export class OneCaseOfMask extends X.Mask
+{
+	readonly name: X.UppercaseEntityToken = X.unset;
+	readonly body: X.OneCaseOfBodyMask = X.unset;
+
+	createSchema() { return {
+		name: X.one(X.UppercaseEntityToken),
+		...X.anchor(X.tokens.is),
+		body: X.one(X.OneCaseOfBodyMask),
+	}}
+}
+
+export class SelectionCompositionPartMask extends X.Mask
+{
+	readonly value: X.SelectionReferenceMask | X.UppercaseEntityToken = X.unset;
+
+	createSchema() { return {
+		...X.anchor(X.tokens.or),
+		value: X.one(X.SelectionReferenceMask, X.UppercaseEntityToken),
+	}}
+}
+
+export class QualifiedSelectionCompositionPartMask extends X.SelectionReferenceMask
+{
+	createSchema() { return {
+		...X.anchor(X.tokens.or),
+		...super.createSchema(),
+	}}
+}
+
+export class OneOfCompositionPartMask extends X.OneOfBodyMask
+{
+	createSchema() { return {
+		...X.anchor(X.tokens.or),
+		...super.createSchema(),
+	}}
+}
+
+export class ManyOfCompositionPartMask extends X.ManyOfBodyMask
+{
+	createSchema() { return {
+		...X.anchor(X.tokens.or),
+		...super.createSchema(),
+	}}
+}
+
+export class OneCaseOfCompositionPartMask extends X.OneCaseOfBodyMask
+{
+	createSchema() { return {
+		...X.anchor(X.tokens.or),
+		...super.createSchema(),
+	}}
+}
+
+/** Shared composition syntax; source kinds and conflicts are resolved semantically. */
+export class SelectionCompositionMask extends X.Mask
+{
+	readonly name: X.UppercaseEntityToken = X.unset;
+	readonly origin: X.SelectionReferenceMask | X.UppercaseEntityToken = X.unset;
+	readonly successors: (X.SelectionCompositionPartMask | X.QualifiedSelectionCompositionPartMask | X.OneOfCompositionPartMask | X.ManyOfCompositionPartMask | X.OneCaseOfCompositionPartMask)[] = X.unset;
+
+	createSchema() { return {
+		name: X.one(X.UppercaseEntityToken),
+		...X.anchor(X.tokens.is),
+		origin: X.one(X.SelectionReferenceMask, X.UppercaseEntityToken),
+		successors: X.some(X.OneOfCompositionPartMask, X.ManyOfCompositionPartMask, X.OneCaseOfCompositionPartMask, X.QualifiedSelectionCompositionPartMask, X.SelectionCompositionPartMask),
 	}}
 }
 
@@ -764,6 +961,7 @@ export class EachMask extends X.Mask
 export class MatchesMask extends X.Mask
 {
 	readonly prefix: X.TExpressionable = X.unset;
+	readonly exhaustive: boolean = X.unset;
 	readonly body: X.MatchesBodyMask = X.unset;
 	
 	createSchema(): X.TMaskSchema { return {
@@ -771,8 +969,9 @@ export class MatchesMask extends X.Mask
 			suffix: true,
 		},
 		prefix: X.lasso(...X.ExpressionMasks),
+		exhaustive: X.has(X.tokens.always),
 		...X.anchor(X.tokens.matches),
-		body: X.one(X.MatchesBodyMask).paren()
+		body: X.one(X.MatchesBodyMask)
 	}}
 }
 
@@ -793,10 +992,10 @@ export class MatchesBodyMask extends X.EnclosureMask
 /** */
 export class MatchesEmptyArmMask extends X.Mask
 {
-	readonly case: X.EntityToken | X.LiteralToken = X.unset;
+	readonly case: X.EntityToken | X.LiteralToken | X.SelectionLiteralMask | X.SelectionReferenceMask = X.unset;
 	
 	createSchema() { return {
-		case: X.one(X.EntityToken, X.LiteralToken),
+		case: X.one(X.SelectionReferenceMask, X.SelectionLiteralMask, X.EntityToken, X.IntegerToken, X.DecimalToken),
 	}}
 }
 
@@ -814,16 +1013,30 @@ export class MatchesElseArmMask extends X.Mask
 /** */
 export class MatchesArmMask extends X.Mask
 {
-	readonly case: X.EntityToken | X.LiteralToken = X.unset;
+	readonly case: X.EntityToken | X.LiteralToken | X.SelectionLiteralMask | X.SelectionReferenceMask = X.unset;
 	readonly result: X.TExpressionable = X.unset;
 	
 	createSchema() { return {
-		case: X.one(X.EntityToken, X.LiteralToken),
+		case: X.one(X.SelectionReferenceMask, X.SelectionLiteralMask, X.EntityToken, X.IntegerToken, X.DecimalToken),
 		result: X.lasso(...X.ExpressionMasks),
 	}}
 }
 
 //# Expressions
+
+/** Membership checks share ordinary type-attestation syntax. */
+export class AttestationExpressionMask extends X.Mask
+{
+	readonly value: X.CompoundParticleMask | X.OriginParticleMask | X.SelectionLiteralMask | X.IntegerToken = X.unset;
+	readonly kind: X.AttestationKind = X.unset;
+	readonly type: X.TypeMasks = X.unset;
+
+	createSchema() { return {
+		value: X.one(X.CompoundParticleMask, X.OriginParticleMask, X.SelectionLiteralMask, X.IntegerToken),
+		kind: X.one(X.AttestationKind),
+		type: reuse.type,
+	}}
+}
 
 /** */
 export class RangeExpressionMask extends X.Mask
@@ -909,21 +1122,21 @@ export class CompoundParticleMask extends X.Mask
 			sparse: true,
 		},
 		origin: X.one(X.OriginParticleMask),
-		posts: X.some(X.PostParticleMask),
+		posts: X.some(X.NegativePostParticleMask, X.PostParticleMask),
 	}}
 }
 
 /** term(x)(x)[x][x] */
 export class OriginParticleMask extends X.Mask
 {
-	readonly term: X.EntityToken | X.ParticleLiteralToken | X.ControlFlowMask = X.unset;
+	readonly term: X.EntityToken | X.ParticleLiteralToken | X.ControlFlowMask | X.FixedToken = X.unset;
 	readonly activators: (X.FunctionActivatorMask | X.IndexActivatorMask)[] = X.unset;
 	
 	createSchema(): X.TMaskSchema { return {
 		[X.schemaOptions]: {
 			sparse: true,
 		},
-		term: X.one(X.EntityToken, X.ParticleLiteralToken, X.ControlFlowMask),
+		term: X.one(X.EntityToken, X.ParticleLiteralToken, X.ControlFlowMask, { this: X.tokens.this }),
 		activators: X.many(X.FunctionActivatorMask, X.IndexActivatorMask),
 	}}
 }
@@ -931,12 +1144,24 @@ export class OriginParticleMask extends X.Mask
 /** .term(x)(x)[x][x] */
 export class PostParticleMask extends X.Mask
 {
-	readonly term: X.EntityToken | X.ParticleLiteralToken = X.unset;
+	readonly term: X.EntityToken | X.LiteralToken | X.SelectionLiteralMask | X.FixedToken = X.unset;
 	readonly activators: (X.FunctionActivatorMask | X.IndexActivatorMask)[] = X.unset;
 	
 	createSchema() { return {
 		...X.anchor(X.tokens.dot),
-		term: X.one(X.EntityToken, X.ParticleLiteralToken),
+		term: X.one(X.EntityToken, X.IntegerToken, X.DecimalToken, X.UnsignedIntegerToken,
+			X.Float32Token, X.Float64Token, X.Float128Token, X.HexToken, X.CharToken,
+			X.SelectionLiteralMask, X.tokenGroups.constants),
+		activators: X.many(X.FunctionActivatorMask, X.IndexActivatorMask),
+	}}
+}
+
+/** Keep the sign in the literal member, rather than parsing subtraction. */
+export class NegativePostParticleMask extends X.PostParticleMask
+{
+	createSchema() { return {
+		...X.anchor(X.tokens.dot, X.tokens.subtract),
+		term: X.one(X.IntegerToken, X.DecimalToken, X.Float32Token, X.Float64Token, X.Float128Token),
 		activators: X.many(X.FunctionActivatorMask, X.IndexActivatorMask),
 	}}
 }

@@ -249,7 +249,9 @@ function createNamedPatternForField(field: X.TField)
 function createPatternForField(field: X.TField, inside: boolean): string[]
 {
 	if (field.kind === "raw")
-		return [".*?"];
+		return field.data.enclosure === X.Enclosure.none ? 
+			[".*?"] : 
+			[X.Proxy.get(field.data.enclosure)];
 	
 	if (field.kind === "has")
 	{
@@ -352,7 +354,11 @@ function createPatternForField(field: X.TField, inside: boolean): string[]
 		const group = [...optimized.chars, ...embeds].flatMap((s, i) => i > 0 ? ["|", s] : [s]);
 		
 		if (hasRanges)
+		{
+			if (group.length > 0)
+				group.push("|");
 			group.push("[", ...optimized.ranges, "]");
+		}
 		
 		pattern.push("(", ...group, ")");
 	}

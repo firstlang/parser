@@ -97,6 +97,12 @@ function tryApplyMask(
 	{
 		const mask = new (descriptor.type as any)(); // 🫤
 		const matches = matchesArray[i];
+		
+		// Anchor the parent span before child masks collapse its visible slots.
+		const maskFrom = applyFrom ?? matches.from;
+		const maskTo = applyTo ?? matches.to;
+		const parentSpan = tape.slice(maskFrom, maskTo);
+		
 		for (const [name, field] of Object.entries(descriptor.schema))
 			if (!X.isAnchorProperty(name))
 				mask[name] = getFieldDefaultValue(field as X.TField);
@@ -114,7 +120,13 @@ function tryApplyMask(
 				continue;
 			}
 			
-			const lens = matchTarget.slice(group.start, group.end);
+			const lens = 
+				matchTarget instanceof X.Tape && 
+				group.start === 0 && 
+				group.end === matchTarget.maskedSize ?
+					matchTarget :
+					matchTarget.slice(group.start, group.end);
+			
 			const value = getFieldValue(lens, field, depth + 1);
 			// Proxy characters represent a token family. Validate specialized flex
 			// fields after the structural match before committing the mask.
@@ -124,10 +136,8 @@ function tryApplyMask(
 			mask[group.name] = value;
 		}
 		
-		const maskFrom = applyFrom ?? matches.from;
-		const maskTo = applyTo ?? matches.to;
 		const matchSpan = maskTo - maskFrom;
-		tape.applyMask(mask as X.Mask, maskFrom, maskTo);
+		parentSpan.applyMask(mask as X.Mask, 0, parentSpan.maskedSize);
 		
 		// If the match span was > 1, then go through all masks that exist after 
 		// the current one in the array and bump their index positions by the 
@@ -141,13 +151,13 @@ function tryApplyMask(
 			for (let n = i + 1; n < matchesArray.length; n++)
 			{
 				const matches = matchesArray[n];
-				matches.from -= matchSpan;
-				matches.to -= matchSpan;
+				matches.from -= matchSpan - 1;
+				matches.to -= matchSpan - 1;
 				
 				for (const group of matches.groups)
 				{
-					group.start -= matchSpan;
-					group.end -= matchSpan;
+					group.start -= matchSpan - 1;
+					group.end -= matchSpan - 1;
 				}
 			}
 		}
@@ -186,7 +196,7 @@ function getFieldValue(tapeLike: X.TapeLike, field: X.TField, depth = 0)
 		throw 0;
 	}
 	
-	if (field.kind === "raw")
+	if (field.kind === "raw" && field.data.enclosure === X.Enclosure.none)
 		return ensure(tapeLike.at(0), X.RawToken);
 	
 	if (field.kind === "has")
@@ -231,6 +241,9 @@ function getFieldValue(tapeLike: X.TapeLike, field: X.TField, depth = 0)
 		unwrapped = true;
 	}
 	
+	if (field.kind === "raw")
+		return tapeLike.tokenSize === 0 ? X.RawToken.new("") : ensure(tapeLike.at(0), X.RawToken);
+
 	if (field.data.matchesOnlyFlexes)
 		return getMatchFieldValueOnlyFlex(tapeLike, field);
 	
@@ -253,7 +266,7 @@ function getFieldValue(tapeLike: X.TapeLike, field: X.TField, depth = 0)
 		if (tapeLike instanceof X.Tape)
 		{
 			const array: any[] = [];
-			for (const subTape of tapeLike.read())
+			for (const subTape of tapeLike.readFragments())
 			{
 				const value = getMatchFieldValue(subTape, field, depth);
 				if (value)
@@ -264,16 +277,14 @@ function getFieldValue(tapeLike: X.TapeLike, field: X.TField, depth = 0)
 		else
 		{
 			// A repeated field captured from a Fragment/Lens is one contiguous
-			// range, unlike a Tape where read() already supplies its item
-			// boundaries. Discover each item's span by trying progressively
-			// larger slices. This matters when one repeated value is itself a
-			// multi-slot mask, such as `or Type` in a type-union successor list.
+			// range. Prefer the longest complete item so optional suffixes stay
+			// attached, such as the arguments in `.member(arguments)`.
 			const values: any[] = [];
 			let index = 0;
 			while (index < tapeLike.maskedSize)
 			{
 				let value: any = null;
-				for (let end = index + 1; end <= tapeLike.maskedSize; end++)
+				for (let end = tapeLike.maskedSize; end > index; end--)
 				{
 					value = getMatchFieldValue(tapeLike.slice(index, end), field, depth);
 					if (value !== null)

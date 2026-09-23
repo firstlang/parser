@@ -124,7 +124,7 @@ export abstract class RawToken extends Token
 	}
 	
 	/** */
-	[Symbol.hasInstance](other: any)
+	static [Symbol.hasInstance](other: any)
 	{
 		return !!other && 
 			typeof other === "object" &&
