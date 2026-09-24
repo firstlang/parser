@@ -1,10 +1,10 @@
 export default {
   codeIn: `
-fn greet({ name }) (
+greet({ name }) (
 )
 `,
   codeOut: `
-fn greet() (
+greet() (
 )
 `,
 } satisfies ParseCase

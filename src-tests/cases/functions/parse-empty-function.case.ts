@@ -1,5 +1,5 @@
 export default {
   codeIn: `
-fn greet() ()
+greet() ()
 `,
 } satisfies ParseCase;

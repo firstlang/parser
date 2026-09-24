@@ -1,6 +1,6 @@
 export default {
 	codeIn: `
-fn greet(name is string) (
+greet(name is string) (
 )
 `,
 } satisfies ParseCase;

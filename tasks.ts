@@ -264,6 +264,7 @@ function printParsedTokens(tape: X.Tape)
 			for (const [index, maskFieldValue] of fieldValue.entries())
 			{
 				if (index > 0 && (
+					mask instanceof X.SelectionArrayMask ||
 					maskField.field.match.some(match => match === X.TypedParameterMask) ||
 						(mask instanceof X.GenericTypeExpressionMask &&
 						maskField.field.data.enclosure === X.Enclosure.paren)))
@@ -275,7 +276,8 @@ function printParsedTokens(tape: X.Tape)
 				else if (maskFieldValue instanceof X.FlexToken ||
 					maskFieldValue instanceof X.FixedToken ||
 					maskFieldValue instanceof X.RawToken)
-					tokens.push(maskFieldValue.text);
+					if (maskFieldValue.text !== "")
+						tokens.push(maskFieldValue.text);
 			}
 			
 			if (enc.right && !valueHasSameEnclosure)
