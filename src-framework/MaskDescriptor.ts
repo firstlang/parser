@@ -303,29 +303,37 @@ function createPatternForField(field: X.TField, inside: boolean): string[]
 		else if (X.FlexToken.isType(match))
 			chars.push(X.Proxy.get(match));
 		
-		// If the Mask that we're trying to match has a certain
-		// required enclosure, then match for that enclosure 
-		// because that is ultimately what is going to exist in
-		// the generated charstring. Note that it is intentional
-		// that this is the first thing that gets checked after the
-		// the match has been narrowed to a typeof Mask.
-		else if (match.descriptor.enclosure !== X.Enclosure.none)
-			chars.push(X.Proxy.get(match.descriptor.enclosure));
-		
-		// In the case when you get a single wildcard pattern,
-		// we just return with it. There's no point in keeping
-		// anything that has been created or continuing to parse
-		// anything else because we've already determined that
-		// anything can match.
-		else if (inside || !match.descriptor.insidePattern)
+		else if (match === X.FixedToken)
 		{
-			pattern.push(field.kind === "many" ? ".*?" : wildcard);
+			pattern.push(field.kind === "many" ? catchAllPattern : wildcard);
 			return nullables.length ? ["(?:", ...pattern, ")?"] : pattern;
 		}
-		
-		else
-			embeds.push("(" + match.descriptor.insidePattern + ")");
-			//embeds.push(match.schema.insidePattern);
+		else if (X.Mask.isType(match))
+		{
+			// If the Mask that we're trying to match has a certain
+			// required enclosure, then match for that enclosure 
+			// because that is ultimately what is going to exist in
+			// the generated charstring. Note that it is intentional
+			// that this is the first thing that gets checked after the
+			// the match has been narrowed to a typeof Mask.
+			if (match.descriptor.enclosure !== X.Enclosure.none)
+				chars.push(X.Proxy.get(match.descriptor.enclosure));
+			
+			// In the case when you get a single wildcard pattern,
+			// we just return with it. There's no point in keeping
+			// anything that has been created or continuing to parse
+			// anything else because we've already determined that
+			// anything can match.
+			else if (inside || !match.descriptor.insidePattern)
+			{
+				pattern.push(field.kind === "many" ? ".*?" : wildcard);
+				return nullables.length ? ["(?:", ...pattern, ")?"] : pattern;
+			}
+			
+			else
+				embeds.push("(" + match.descriptor.insidePattern + ")");
+				//embeds.push(match.schema.insidePattern);
+		}
 	}
 	
 	const optimized = optimizeIntoRanges(chars);

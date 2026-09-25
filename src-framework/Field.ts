@@ -138,7 +138,7 @@ interface IRawField extends Field
 	match: readonly any[];
 }
 
-export type TMatch = typeof X.FlexToken | typeof X.Mask | TSelect;
+export type TMatch = typeof X.FixedToken | typeof X.FlexToken | typeof X.Mask | TSelect;
 export type TSelect = Record<string, X.FixedToken>;
 
 /** */

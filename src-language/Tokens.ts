@@ -70,11 +70,17 @@ export class RegexToken extends ParticleLiteralToken
 	static readonly pattern = /\/{1,}\//u;
 }
 
+export class ResourceToken extends X.FlexToken
+{
+	static readonly pattern = /[A-Za-z][A-Za-z0-9+.-]*:[A-Za-z0-9._~!$&'*+,;=:@/?%-]+/u;
+}
+
 export const flexTokens = Object.freeze({
 	lowercaseEntity: LowercaseEntityToken,
 	uppercaseEntity: UppercaseEntityToken,
 	
 	// Literals - Particles
+	resource: ResourceToken,
 	quantity: QuantityToken,
 	unsignedInteger: UnsignedIntegerToken,
 	decimal: DecimalToken,
@@ -430,6 +436,7 @@ const words = Object.freeze({
 const symbols = Object.freeze({
 	colon: new X.FixedToken(":"),
 	comma: new X.FixedToken(","),
+	comment: new X.FixedToken("//"),
 	dot: new X.FixedToken("."),
 	hashbang: new X.FixedToken("#!"),
 	not: new X.FixedToken("!"),
@@ -485,7 +492,6 @@ const prefixes = Object.freeze({
 	heading4: new X.FixedToken("####"),
 	heading5: new X.FixedToken("#####"),
 	heading6: new X.FixedToken("######"),
-	comment: new X.FixedToken("--"),
 	deactivator: new X.FixedToken("\\\\"),
 	else: new X.FixedToken("else"),
 	ensure: new X.FixedToken("ensure"),

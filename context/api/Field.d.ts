@@ -59,7 +59,7 @@ interface IRawField extends Field {
     kind: "raw";
     match: readonly any[];
 }
-export type TMatch = typeof X.FlexToken | typeof X.Mask | TSelect;
+export type TMatch = typeof X.FixedToken | typeof X.FlexToken | typeof X.Mask | TSelect;
 export type TSelect = Record<string, X.FixedToken>;
 /** */
 export declare function isSelectMatch(value: any): value is TSelect;

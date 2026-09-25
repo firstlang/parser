@@ -55,6 +55,8 @@ export const TypeMasks: readonly [
 
 export type SpaceBodyMasks = X.Sum<typeof SpaceBodyMasks>;
 export const SpaceBodyMasks = X.sum(
+	X.CommentMask,
+	X.AnchorMask,
 	X.FromMask,
 	X.TypedStableFunctionMask,
 	X.StableFunctionMask,
@@ -73,6 +75,8 @@ export const SpaceBodyMasks = X.sum(
 
 export type ClassBodyMasks = X.Sum<typeof ClassBodyMasks>;
 export const ClassBodyMasks = X.sum(
+	X.CommentMask,
+	X.AnchorMask,
 	X.OneOfMask,
 	X.ManyOfMask,
 	X.OneCaseOfMask,
@@ -106,6 +110,7 @@ export const ExpressionMasks = X.sum(
 
 export type StatementMasks = X.Sum<typeof StatementMasks>;
 export const StatementMasks = X.sum(
+	X.AnchorMask,
 	X.SimpleAssignmentMask,
 	X.ComplexAssignmentMask,
 	X.ElseIfStatementMask,

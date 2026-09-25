@@ -257,7 +257,7 @@ function getFieldValue(tapeLike: X.TapeLike, field: X.TField, depth = 0)
 	}
 	
 	if (field.kind === "lasso")
-		return ensureNotNull(getMatchFieldValue(tapeLike, field, depth), field.description);
+		return getLassoFieldValue(tapeLike, field, depth);
 	
 	if (field.kind === "many" || field.kind === "some")
 	{
@@ -305,6 +305,44 @@ function getFieldValue(tapeLike: X.TapeLike, field: X.TField, depth = 0)
 	throw 0;
 }
 
+/** Resolves a lasso field as one logical sequence of accepted alternatives. */
+function getLassoFieldValue(tapeLike: X.TapeLike, field: X.ILassoField, depth = 0)
+{
+	const values: any[] = [];
+	
+	if (tapeLike instanceof X.Tape)
+	{
+		for (const subTape of tapeLike.readFragments())
+		{
+			const value = getLassoFieldValue(subTape, field, depth);
+			if (value === null)
+				return null;
+			
+			values.push(...X.toArray(value));
+		}
+		return values.length === 0 ? null : values;
+	}
+	
+	let index = 0;
+	while (index < tapeLike.maskedSize)
+	{
+		let value: any = null;
+		for (let end = tapeLike.maskedSize; end > index; end--)
+		{
+			value = getMatchFieldValue(tapeLike.slice(index, end), field, depth);
+			if (value !== null)
+				break;
+		}
+		if (value === null)
+			return null;
+
+		values.push(value);
+		index++;
+	}
+	
+	return values.length === 0 ? null : values;
+}
+
 /**
  * 
  */
@@ -319,8 +357,6 @@ function getMatchFieldValue(tapeLike: X.TapeLike, field: TMatchableField, depth 
 			const e = tapeLike.at(0);
 			if (e instanceof match)
 				return e;
-			
-			//if (field.description === "MatchesMask.body") debugger;
 			
 			const unmaskedTokenCountBefore = tapeLike.unmaskedTokenCount;
 			const result = tryApplyMask(tapeLike, match.descriptor, depth + 1);
@@ -346,6 +382,15 @@ function getMatchFieldValue(tapeLike: X.TapeLike, field: TMatchableField, depth 
 			
 			const e = tapeLike.at(0);
 			if (e instanceof match)
+				return e;
+		}
+		else if (match === X.FixedToken)
+		{
+			if (tapeLike.maskedSize !== 1)
+				continue;
+			
+			const e = tapeLike.at(0);
+			if (e instanceof X.FixedToken)
 				return e;
 		}
 		else if (X.isSelectMatch(match))
@@ -521,10 +566,3 @@ function ensure<T extends abstract new (...args: any[]) => any>(
 }
 
 /** */
-function ensureNotNull<T>(value: T | null | undefined, description = "Value"): T
-{
-	if (value === null || value === undefined)
-		throw new Error(`${description} must not be null or undefined`);
-	
-	return value;
-}

@@ -7,9 +7,26 @@ import * as X from "./XX.ts";
  * paren-enclosed body of statements or expresions.
  */
 type Body = (X.StatementMasks | X.ExpressionMasks)[];
+
+type AnchorContent = 
+	X.EntityToken | 
+	X.LiteralToken | 
+	X.ResourceToken | 
+	X.FixedToken | 
+	X.IslandMask;
+
 const reuse = {
 	get body(): X.IManyField { return X.many(...X.StatementMasks, ...X.ExpressionMasks).paren(); },
 	get type(): X.IOneField { return X.one(...X.TypeMasks); },
+	get anchorContent(): X.ILassoField
+	{
+		return X.lasso(
+			X.EntityToken,
+			X.LiteralToken,
+			X.ResourceToken,
+			X.IslandMask,
+			X.FixedToken);
+	},
 } as const;
 
 //# Top level Masks (used everywhere)
@@ -73,11 +90,32 @@ export class ConstantExpressionMask extends X.Mask
 /** */
 export class CommentMask extends X.Mask
 {
-	readonly text: X.RawToken = X.unset;
+	readonly content: AnchorContent = X.unset;
 	
 	createSchema() { return {
 		...X.anchor(X.tokens.comment),
-		text: X.raw(),
+		content: reuse.anchorContent,
+	}}
+}
+
+/** Parenthesized semantic material embedded inside anchor prose. */
+export class IslandMask extends X.Mask
+{
+	readonly content: AnchorContent = X.unset;
+	
+	createSchema() { return {
+		content: reuse.anchorContent.paren(),
+	}}
+}
+
+/** Compiler-aware natural-language sentence owned by its enclosing declaration. */
+export class AnchorMask extends X.Mask
+{
+	readonly content: AnchorContent = X.unset;
+	
+	createSchema() { return {
+		...X.anchor(X.tokens.subtract),
+		content: reuse.anchorContent,
 	}}
 }
 
@@ -919,11 +957,11 @@ export class ThrowStatementMask extends X.Mask
 /** */
 export class CommentStatementMask extends X.Mask
 {
-	readonly content: X.RawToken = X.unset;
+	readonly content: AnchorContent = X.unset;
 	
 	createSchema() { return {
 		...X.anchor(X.tokens.comment),
-		content: X.raw(),
+		content: reuse.anchorContent,
 	}}
 }
 
