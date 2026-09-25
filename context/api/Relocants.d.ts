@@ -9,8 +9,6 @@ export declare const delimiters: Readonly<{
     braceTapeR: X.FixedToken;
     quoteTape: X.FixedToken;
     fenceTape: X.FixedToken;
-    substitutionTapeL: X.FixedToken;
-    substitutionTapeR: X.FixedToken;
 }>;
 /** */
 export declare const delimitersForMarkup: Readonly<{
@@ -29,7 +27,7 @@ export declare class NewlineToken extends WhitespaceToken {
     static readonly pattern: RegExp;
 }
 /** */
-export declare class EntityToken extends X.FlexToken {
+export declare abstract class EntityToken extends X.FlexToken {
     static readonly pattern: RegExp;
 }
 /** */

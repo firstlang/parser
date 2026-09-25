@@ -62,13 +62,6 @@ export const Enclosure = {
 		left: null,
 		right: null,
 	},
-	
-	/** Tape for (( )) delimiters (substitution in markup literals). */
-	substitution: {
-		kind: enc + "substitution",
-		left: X.delimiters.substitutionTapeL,
-		right: X.delimiters.substitutionTapeR,
-	},
 } as const;
 export type Enclosure = (typeof Enclosure)[keyof typeof Enclosure];
 

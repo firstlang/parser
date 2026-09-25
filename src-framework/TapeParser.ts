@@ -84,8 +84,6 @@ export class TapeParser
 				tape.append(this.parseTextual(X.delimiters.fenceTape));
 				return tape;
 			}
-			case X.delimiters.substitutionTapeL.text:
-				return this.parseToDelimiter(X.Enclosure.substitution);
 		}
 		
 		const existing = this.allTokens.get(token);
@@ -94,8 +92,7 @@ export class TapeParser
 		
 		if (token === X.delimiters.parenTapeR.text ||
 			token === X.delimiters.bracketTapeR.text ||
-			token === X.delimiters.braceTapeR.text ||
-			token === X.delimiters.substitutionTapeR.text)
+			token === X.delimiters.braceTapeR.text)
 			return this.allTokens.get(token)!;
 		
 		const maybeMarkup = this.tryParseMarkup(token);
@@ -186,18 +183,6 @@ export class TapeParser
 				if (maybeMarkupTape)
 				{
 					tape.append(maybeMarkupTape);
-					continue;
-				}
-				
-				// Substitutions
-				if (token === X.delimiters.substitutionTapeL.text)
-				{
-					const subTape = this.createTape(X.Enclosure.substitution);
-					debugger;
-					//while (this.tokens[this.index] !== X.Delimiters.substitutionTapeR)
-					//	subTape.push(this.parseOne());
-					
-					subTape.append(subTape);
 					continue;
 				}
 				

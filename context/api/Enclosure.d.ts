@@ -52,12 +52,6 @@ export declare const Enclosure: {
         readonly left: null;
         readonly right: null;
     };
-    /** Tape for (( )) delimiters (substitution in markup literals). */
-    readonly substitution: {
-        readonly kind: string;
-        readonly left: X.FixedToken;
-        readonly right: X.FixedToken;
-    };
 };
 export type Enclosure = (typeof Enclosure)[keyof typeof Enclosure];
 /** Guards on whether the specified object is one of the items in the Enclosure const.  */

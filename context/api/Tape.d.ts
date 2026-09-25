@@ -33,6 +33,8 @@ export declare class Tape {
     private readonly fragments;
     /** */
     private readonly unreadTokens;
+    /** Visits all fragments, including enclosure contents already read for matching. */
+    readFragments(): IterableIterator<X.Fragment>;
     /**
      * Reads the tape into fragments, evicting whitespace on discovery.
      *

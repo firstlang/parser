@@ -27,7 +27,7 @@ X.lasso matches a sequence of alternatives and stores the result in one logical 
 X.lasso greedily matches one or more consecutive values accepted by its supplied alternatives until the next value does not conform.
 X.raw captures otherwise uninterpreted token content as a RawToken.
 X.has tests for a fixed-token sequence and stores whether that sequence was present.
-A field can declare that its matched content is enclosed by parentheses, braces, brackets, quotes, fences, markup, or substitutions.
+A field can declare that its matched content is enclosed by parentheses, braces, brackets, quotes, fences, or markup.
 A lasso field rejects enclosure-mask alternatives.
 A some field rejects enclosure-mask alternatives.
 The original reason that lasso and some reject enclosure-mask alternatives is unknown.

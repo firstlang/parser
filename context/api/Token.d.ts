@@ -40,7 +40,7 @@ export declare abstract class RawToken extends Token {
     /** */
     static new(text: string): RawToken;
     /** */
-    [Symbol.hasInstance](other: any): boolean;
+    static [Symbol.hasInstance](other: any): boolean;
     abstract readonly text: string;
 }
 /** */

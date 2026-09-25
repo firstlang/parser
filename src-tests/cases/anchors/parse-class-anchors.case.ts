@@ -3,7 +3,7 @@ export default {
 	// Rendering
 	- Widgets render without mutating shared state.
 	render() (
-		- Compare output against (image:reference%20render.png).
+		- Compare output against {image:reference%20render.png}.
 		return true
 	)
 )`,

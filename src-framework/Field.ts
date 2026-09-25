@@ -96,13 +96,6 @@ export class Field
 		this.data.enclosure = X.Enclosure.markup;
 		return this;
 	}
-	
-	/** */
-	substitution(): this
-	{
-		this.data.enclosure = X.Enclosure.substitution;
-		return this;
-	}
 }
 
 /** 

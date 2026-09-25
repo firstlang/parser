@@ -40,8 +40,6 @@ export declare class Field {
     fence(): this;
     /** */
     markup(): this;
-    /** */
-    substitution(): this;
 }
 /**
  * Defines the sum type that combines all field types to allow

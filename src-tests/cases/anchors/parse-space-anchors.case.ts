@@ -5,8 +5,8 @@ export default {
 	- Should startup retry network failures?
 	start() (
 		- Load the startup configuration.
-		- Makes initialization failures from (calculateThings(...)) actionable.
-		- Preserve the behavior described in (chat:startup-thread).
+		- Makes initialization failures from {calculateThings} actionable.
+		- Preserve the behavior described in {chat:startup-thread}.
 	)
 )`,
 } satisfies ParseCase;

@@ -98,13 +98,13 @@ export class CommentMask extends X.Mask
 	}}
 }
 
-/** Parenthesized semantic material embedded inside anchor prose. */
+/** Brace-delimited semantic material embedded inside anchor prose. */
 export class IslandMask extends X.Mask
 {
 	readonly content: AnchorContent = X.unset;
 	
 	createSchema() { return {
-		content: reuse.anchorContent.paren(),
+		content: reuse.anchorContent.brace(),
 	}}
 }
 
