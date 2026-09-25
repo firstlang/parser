@@ -58,6 +58,9 @@ export class GenericHtmlPrinter
 				content.push(this.spanifyToken(fixedToken));
 			
 			const enc = maskField.field.data.enclosure;
+			if (maskField.field.data.nullable && maskField.value === null)
+				continue;
+
 			if (enc.left && enc.right)
 			{
 				const enclosureContent: TSpanChild[] = [];

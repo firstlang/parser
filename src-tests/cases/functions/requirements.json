@@ -1,5 +1,9 @@
 {
 	"parse-empty-function": "Parse a named function declaration followed by an empty parameter list and a parenthesized empty body.",
+	"parse-bodyless-function": "Parse a named function declaration with no implementation body.",
+	"parse-bodyless-typed-function": "Parse a typed named function declaration with no implementation body.",
+	"parse-bodyless-constructor": "Parse a constructor declaration with parameters and no implementation body.",
+	"reject-detached-function-body": "Do not attach a function body that begins on a later peer-indented line.",
 	"parse-function-body": "Parse a named function declaration whose parenthesized body contains an ordinary function-call expression.",
 	"parse-single-parameter": "Parse a function declaration with one parameter written as a name, `is`, and a type.",
 	"parse-multiple-parameters": "Parse a function declaration with multiple `name is Type` parameters separated by commas.",
@@ -26,5 +30,7 @@
 	"parse-generic-function": "Parse a generic function whose leading parameter is declared as `T is type` and whose later parameter and return annotation use `T`.",
 	"reject-angle-bracket-generics": "Reject a function declaration that places TypeScript-style generic parameters in angle brackets after the function name.",
 	"parse-generator-function": "Parse a named function declaration containing a runnable `yield` operation that targets the current function.",
+	"parse-explicit-generator": "Parse a generator function declared with `is yield Type` and an implementation body.",
+	"parse-bodyless-generator": "Parse a generator function declared with `is yield Type` and no implementation body.",
 	"parse-generator-call": "Parse an ordinary call to a function whose declaration contains a runnable `yield`, without requiring any serialized ping-pong or `yields` keyword."
 }

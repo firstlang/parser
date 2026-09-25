@@ -30,6 +30,7 @@ export class Field
 	
 	/** */
 	readonly data = {
+		nullable: false,
 		nullableTokens: [] as X.FixedToken[],
 		enclosure: X.Enclosure.none as X.Enclosure,
 		terminal: false,
@@ -42,15 +43,15 @@ export class Field
 	}
 	
 	/**
-	 * Indicates that the field being matched is actually nullable,
-	 * requires the specified FixedToken sequence prefix as anchor
-	 * to determine whether the field value is null or not.
+	 * Indicates that the field being matched is nullable. Optional anchor
+	 * tokens, when supplied, prefix the field when its value is present.
 	 * 
 	 * Examples:
 	 * 1 to 10 step 2
 	 */
 	nullable(...anchor: X.FixedToken[]): this
 	{
+		this.data.nullable = true;
 		this.data.nullableTokens = anchor;
 		return this;
 	}

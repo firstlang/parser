@@ -18,6 +18,18 @@ type AnchorContent =
 const reuse = {
 	get body(): X.IManyField { return X.many(...X.StatementMasks, ...X.ExpressionMasks).paren(); },
 	get type(): X.IOneField { return X.one(...X.TypeMasks); },
+	/** Prefer atomic types so a following body is not consumed as generic arguments. */
+	get returnType(): X.IOneField
+	{
+		return X.one(
+			X.TypeExpressionMask,
+			X.GenericTypeExpressionMask,
+			X.ArrayTypeExpressionMask,
+			X.EditableTypeExpressionMask,
+			X.EditableArrayTypeExpressionMask,
+			X.TypeIntersectionExpressionMask,
+			X.TypeUnionExpressionMask);
+	},
 	get anchorContent(): X.ILassoField
 	{
 		return X.lasso(
@@ -355,7 +367,7 @@ export class RestParameterMask extends X.ParameterMask
 /** */
 export class FunctionMask extends X.Mask
 {
-	readonly body: Body = X.unset;
+	readonly body: Body | null = X.unset;
 }
 
 /** */
@@ -365,7 +377,7 @@ export class ConstructorFunctionMask extends FunctionMask
 	
 	createSchema() { return {
 		signature: X.many(...X.ParameterMasks).paren(),
-		body: reuse.body,
+		body: reuse.body.nullable(),
 	}}
 }
 
@@ -387,9 +399,25 @@ export class StableFunctionMask extends FunctionMask
 	createSchema() { return {
 		name: X.one(X.LowercaseEntityToken),
 		signature: X.many(...X.ParameterMasks).paren(),
-		body: reuse.body,
+		body: reuse.body.nullable(),
 	}}
 };
+
+/** Stable generator function with an explicit yielded type. */
+export class GeneratorStableFunctionMask extends X.FunctionMask
+{
+	readonly name: X.LowercaseEntityToken = X.unset;
+	readonly signature: ParameterMask[] = X.unset;
+	readonly returnType: X.TypeMasks = X.unset;
+
+	createSchema() { return {
+		name: X.one(X.LowercaseEntityToken),
+		signature: X.many(...X.ParameterMasks).paren(),
+		...X.anchor(X.tokens.is, X.tokens.yield1),
+		returnType: reuse.returnType,
+		body: reuse.body.nullable(),
+	}}
+}
 
 /** Stable function with an explicit return annotation. */
 export class TypedStableFunctionMask extends X.StableFunctionMask
@@ -400,8 +428,8 @@ export class TypedStableFunctionMask extends X.StableFunctionMask
 		name: X.one(X.LowercaseEntityToken),
 		signature: X.many(...X.ParameterMasks).paren(),
 		...X.anchor(X.tokens.is),
-		returnType: reuse.type,
-		body: reuse.body,
+		returnType: reuse.returnType,
+		body: reuse.body.nullable(),
 	}}
 }
 

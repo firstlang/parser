@@ -271,7 +271,10 @@ function createPatternForField(field: X.TField, inside: boolean): string[]
 	// The field will have other constraints too (like one or many) but these
 	// would be handled in the applicator rather than filtered in the regex.
 	if (field.data.enclosure !== X.Enclosure.none)
-		return [X.Proxy.get(field.data.enclosure)];
+	{
+		const enclosure = X.Proxy.get(field.data.enclosure);
+		return field.data.nullable ? ["(?:", enclosure, ")?"] : [enclosure];
+	}
 	
 	const pattern: string[] = [];
 	const nullables = field.data.nullableTokens;
@@ -284,7 +287,7 @@ function createPatternForField(field: X.TField, inside: boolean): string[]
 	if (field.kind === "lasso")
 	{
 		pattern.push(catchAllPattern);
-		return nullables.length ? ["(?:", ...pattern, ")?"] : pattern;
+		return field.data.nullable ? ["(?:", ...pattern, ")?"] : pattern;
 	}
 	
 	const wildcard = field.kind === "one" ? 
@@ -306,7 +309,7 @@ function createPatternForField(field: X.TField, inside: boolean): string[]
 		else if (match === X.FixedToken)
 		{
 			pattern.push(field.kind === "many" ? catchAllPattern : wildcard);
-			return nullables.length ? ["(?:", ...pattern, ")?"] : pattern;
+			return field.data.nullable ? ["(?:", ...pattern, ")?"] : pattern;
 		}
 		else if (X.Mask.isType(match))
 		{
@@ -377,7 +380,7 @@ function createPatternForField(field: X.TField, inside: boolean): string[]
 	if (field.kind === "some")
 		pattern.push("{1,}");
 	
-	return nullables.length ? ["(?:", ...pattern, ")?"] : pattern;
+	return field.data.nullable ? ["(?:", ...pattern, ")?"] : pattern;
 }
 
 /**

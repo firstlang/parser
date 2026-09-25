@@ -541,6 +541,9 @@ function sanitizeMatches(matches: RegExpMatchArray): TMatches | null
 /** */
 function getFieldDefaultValue(field: X.TField)
 {
+	if (field.data.nullable)
+		return null;
+
 	switch (field.kind)
 	{
 		case "has": return false;

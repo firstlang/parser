@@ -250,6 +250,9 @@ function printParsedTokens(tape: X.Tape)
 				tokens.push(fixedToken.text);
 			
 			const enc = maskField.field.data.enclosure;
+			if (maskField.field.data.nullable && maskField.value === null)
+				continue;
+
 			const fieldValue = X.toArray(maskField.value).flat();
 			const valueHasSameEnclosure = fieldValue.some(v =>
 				v instanceof X.Mask &&
