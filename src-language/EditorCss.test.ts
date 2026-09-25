@@ -103,10 +103,10 @@ Test.describe("EditorCss", () =>
 	{
 		const language = new X.ProjectLanguage();
 		const functionTape = language.createMaskedTape("greet() ()");
-		const classTape = language.createMaskedTape("Greeting ()");
+		const spaceTape = language.createMaskedTape("Greeting ()");
 
 		Assert.ok(functionTape.at(0) instanceof X.StableFunctionMask);
-		Assert.ok(classTape.at(0) instanceof X.ClassMask);
+		Assert.ok(spaceTape.at(0) instanceof X.SpaceMask);
 	});
 
 	Test.test("HTML classifies constants and generic type names semantically", () =>

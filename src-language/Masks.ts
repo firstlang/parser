@@ -454,7 +454,7 @@ export class StartupFunctionMask extends FunctionMask
 	}}
 }
 
-//# Class body masks
+//# Space body masks
 
 /** */
 export class PropertyMask extends X.Mask
@@ -466,7 +466,7 @@ export class PropertyMask extends X.Mask
 	}}
 }
 
-/** A mask that defines a field in a class. */
+/** A mask that defines a field in a space. */
 export class FieldMask extends X.Mask
 {
 	readonly name: X.EntityToken = X.unset;
@@ -505,20 +505,6 @@ export class WorkerMask extends X.Mask
 		name: X.one(X.EntityToken),
 		...X.anchor(X.tokens.is, X.tokens.worker),
 		options: X.many(ConstantMask).paren(),
-	}}
-}
-
-/** */
-export class ClassMask extends X.Mask
-{
-	readonly name: X.UppercaseEntityToken = X.unset;
-	readonly supers: X.EntityToken[] | null = X.unset;
-	readonly members: X.ClassBodyMasks[] = X.unset;
-		
-	createSchema() { return {
-		name: X.one(X.UppercaseEntityToken),
-		supers: X.many(X.EntityToken).nullable(X.tokens.is),
-		members: X.many(...X.ClassBodyMasks).paren()
 	}}
 }
 
@@ -811,12 +797,13 @@ export class SpaceBodyMask extends X.Mask
 /** */
 export class SpaceMask extends X.Mask
 {
-	readonly name: X.EntityToken = X.unset;
-	readonly members: X.ToSum<typeof X.SpaceBodyMasks>[] = X.unset;
+	readonly name: X.UppercaseEntityToken = X.unset;
+	readonly supers: X.EntityToken[] | null = X.unset;
+	readonly members: X.SpaceBodyMasks[] = X.unset;
 	
-	createSchema() { return {
-		name: X.one(X.EntityToken),
-		...X.anchor(X.tokens.is, X.tokens.space),
+	createSchema(): X.TMaskSchema { return {
+		name: X.one(X.UppercaseEntityToken),
+		supers: X.many(X.EntityToken).nullable(X.tokens.is),
 		members: X.many(...X.SpaceBodyMasks).paren()
 	}}
 }
