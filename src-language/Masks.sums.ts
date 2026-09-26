@@ -18,12 +18,14 @@ export type TypeOperandMasks = X.Sum<typeof TypeOperandMasks>;
 export const TypeOperandMasks: readonly [
 	typeof X.EditableArrayTypeExpressionMask,
 	typeof X.EditableTypeExpressionMask,
+	typeof X.ObjectTypeExpressionMask,
 	typeof X.ArrayTypeExpressionMask,
 	typeof X.GenericTypeExpressionMask,
 	typeof X.TypeExpressionMask,
 ] = X.sum(
 	X.EditableArrayTypeExpressionMask,
 	X.EditableTypeExpressionMask,
+	X.ObjectTypeExpressionMask,
 	X.ArrayTypeExpressionMask,
 	X.GenericTypeExpressionMask,
 	X.TypeExpressionMask,
@@ -34,6 +36,7 @@ export type IntersectionTypeOperandMasks = X.Sum<typeof IntersectionTypeOperandM
 export const IntersectionTypeOperandMasks = X.sum(
 	X.EditableArrayTypeExpressionMask,
 	X.EditableTypeExpressionMask,
+	X.ObjectTypeExpressionMask,
 	X.ArrayTypeExpressionMask,
 	X.GenericTypeExpressionMask,
 	X.NamedTypeExpressionMask,
@@ -46,6 +49,7 @@ export const TypeMasks: readonly [
 	typeof X.TypeIntersectionExpressionMask,
 	typeof X.EditableArrayTypeExpressionMask,
 	typeof X.EditableTypeExpressionMask,
+	typeof X.ObjectTypeExpressionMask,
 	typeof X.ArrayTypeExpressionMask,
 	typeof X.GenericTypeExpressionMask,
 	typeof X.TypeExpressionMask,
@@ -89,8 +93,9 @@ export const SpaceBodyMasks: readonly typeof X.Mask[] = X.sum(
 );
 
 export type ExpressionMasks = X.Sum<typeof ExpressionMasks>;
-export const ExpressionMasks = X.sum(
+export const ExpressionMasks: readonly typeof X.Mask[] = X.sum(
 	X.AttestationExpressionMask,
+	X.ObjectTypeExpressionMask,
 	X.SelectionLiteralMask,
 	X.TernaryExpressionMask,
 	X.EachMask,

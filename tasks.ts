@@ -268,6 +268,7 @@ function printParsedTokens(tape: X.Tape)
 			{
 				if (index > 0 && (
 					mask instanceof X.SelectionArrayMask ||
+					mask instanceof X.ObjectTypeExpressionMask ||
 					maskField.field.match.some(match => match === X.TypedParameterMask) ||
 						(mask instanceof X.GenericTypeExpressionMask &&
 						maskField.field.data.enclosure === X.Enclosure.paren)))

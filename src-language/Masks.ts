@@ -32,6 +32,7 @@ const reuse = {
 		return X.one(
 			X.TypeExpressionMask,
 			X.GenericTypeExpressionMask,
+			X.ObjectTypeExpressionMask,
 			X.ArrayTypeExpressionMask,
 			X.EditableTypeExpressionMask,
 			X.EditableArrayTypeExpressionMask,
@@ -280,10 +281,29 @@ export class EditableTypeExpressionMask extends X.Mask
 	}}
 }
 
-/** Reserved for alias-only structural type syntax. */
+/** `name is Type` entry shared by object type and value literals. */
+export class ObjectLiteralFieldMask extends X.Mask
+{
+	readonly name: X.EntityToken = X.unset;
+	readonly type: X.TypeMasks = X.unset;
+	readonly value: X.TExpressionable | null = X.unset;
+	
+	createSchema(): X.TMaskSchema { return {
+		name: X.one(X.EntityToken),
+		...X.anchor(X.tokens.is),
+		type: reuse.type,
+		value: X.lasso(...X.ExpressionMasks, X.EntityToken, X.LiteralToken).nullable(X.tokens.basicAssign),
+	}}
+}
+
+/** `{ id is string }`, usable as structural type syntax or as a zero-value literal. */
 export class ObjectTypeExpressionMask extends X.Mask
 {
-	createSchema() { return {} }
+	readonly content: X.ObjectLiteralFieldMask[] = X.unset;
+	
+	createSchema(): X.TMaskSchema { return {
+		content: X.many(X.ObjectLiteralFieldMask).brace(),
+	}}
 }
 
 //# Function-related Masks
