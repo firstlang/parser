@@ -62,6 +62,13 @@ export const Enclosure = {
 		left: null,
 		right: null,
 	},
+	
+	/** Tape for line-prefixed content */
+	line: {
+		kind: enc + "line",
+		left: null,
+		right: null,
+	},
 } as const;
 export type Enclosure = (typeof Enclosure)[keyof typeof Enclosure];
 

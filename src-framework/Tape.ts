@@ -28,7 +28,7 @@ export interface ITapeNavigationCursor extends X.IFragmentCursor
 export class Tape
 {
 	/** */
-	constructor(fragmenter: X.FixedToken, enclosure: X.Enclosure = X.Enclosure.none)
+	constructor(fragmenter: X.FixedToken | null, enclosure: X.Enclosure = X.Enclosure.none)
 	{
 		this.fragmenter = fragmenter;
 		this.enclosure = enclosure;
@@ -41,7 +41,7 @@ export class Tape
 	readonly enclosure: X.Enclosure;
 	
 	/** Stores the separator token that forces a fragment into existence. */
-	private readonly fragmenter: X.FixedToken;
+	private readonly fragmenter: X.FixedToken | null;
 	
 	/** */
 	private readonly fragments: X.Fragment[] = [];

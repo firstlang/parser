@@ -276,9 +276,11 @@ function printParsedTokens(tape: X.Tape)
 				if (maskFieldValue instanceof X.Mask)
 					recurse(maskFieldValue);
 				
+				else if (maskFieldValue instanceof X.RawToken)
+					tokens.push(...maskFieldValue.text.split(" ").filter(t => t !== ""));
+				
 				else if (maskFieldValue instanceof X.FlexToken ||
-					maskFieldValue instanceof X.FixedToken ||
-					maskFieldValue instanceof X.RawToken)
+					maskFieldValue instanceof X.FixedToken)
 					if (maskFieldValue.text !== "")
 						tokens.push(maskFieldValue.text);
 			}

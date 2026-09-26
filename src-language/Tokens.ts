@@ -434,6 +434,7 @@ const words = Object.freeze({
 });
 
 const symbols = Object.freeze({
+	apostrophe: new X.FixedToken("'"),
 	colon: new X.FixedToken(":"),
 	comma: new X.FixedToken(","),
 	comment: new X.FixedToken("//"),

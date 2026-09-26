@@ -306,6 +306,9 @@ function createPatternForField(field: X.TField, inside: boolean): string[]
 		else if (X.FlexToken.isType(match))
 			chars.push(X.Proxy.get(match));
 		
+		else if (match === X.RawToken)
+			chars.push(X.Proxy.get(X.RawToken));
+		
 		else if (match === X.FixedToken)
 		{
 			pattern.push(field.kind === "many" ? catchAllPattern : wildcard);

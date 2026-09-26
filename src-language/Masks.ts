@@ -9,10 +9,7 @@ import * as X from "./XX.ts";
 type Body = (X.StatementMasks | X.ExpressionMasks)[];
 
 type AnchorContent = 
-	X.EntityToken | 
-	X.LiteralToken | 
-	X.ResourceToken | 
-	X.FixedToken | 
+	X.RawToken |
 	X.IslandMask;
 
 const reuse = {
@@ -30,13 +27,12 @@ const reuse = {
 			X.TypeIntersectionExpressionMask,
 			X.TypeUnionExpressionMask);
 	},
-	get anchorContent(): X.ILassoField
+	get islandContent(): X.ILassoField
 	{
 		return X.lasso(
 			X.EntityToken,
 			X.LiteralToken,
 			X.ResourceToken,
-			X.IslandMask,
 			X.FixedToken);
 	},
 } as const;
@@ -102,32 +98,34 @@ export class ConstantExpressionMask extends X.Mask
 /** */
 export class CommentMask extends X.Mask
 {
-	readonly content: AnchorContent = X.unset;
+	readonly content: X.RawToken = X.unset;
 	
 	createSchema() { return {
+		[X.schemaOptions]: { enclosure: X.Enclosure.line },
 		...X.anchor(X.tokens.comment),
-		content: reuse.anchorContent,
+		content: X.raw(),
 	}}
 }
 
 /** Brace-delimited semantic material embedded inside anchor prose. */
 export class IslandMask extends X.Mask
 {
-	readonly content: AnchorContent = X.unset;
+	readonly content: X.EntityToken | X.LiteralToken | X.ResourceToken | X.FixedToken = X.unset;
 	
 	createSchema() { return {
-		content: reuse.anchorContent.brace(),
+		content: reuse.islandContent.brace(),
 	}}
 }
 
 /** Compiler-aware natural-language sentence owned by its enclosing declaration. */
 export class AnchorMask extends X.Mask
 {
-	readonly content: AnchorContent = X.unset;
+	readonly content: AnchorContent[] = X.unset;
 	
 	createSchema() { return {
+		[X.schemaOptions]: { enclosure: X.Enclosure.line },
 		...X.anchor(X.tokens.subtract),
-		content: reuse.anchorContent,
+		content: X.some(X.RawToken, X.IslandMask),
 	}}
 }
 
@@ -972,11 +970,12 @@ export class ThrowStatementMask extends X.Mask
 /** */
 export class CommentStatementMask extends X.Mask
 {
-	readonly content: AnchorContent = X.unset;
+	readonly content: X.RawToken = X.unset;
 	
 	createSchema() { return {
+		[X.schemaOptions]: { enclosure: X.Enclosure.line },
 		...X.anchor(X.tokens.comment),
-		content: reuse.anchorContent,
+		content: X.raw(),
 	}}
 }
 

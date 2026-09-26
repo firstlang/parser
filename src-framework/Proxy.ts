@@ -48,6 +48,9 @@ export const Proxy = new class
 		else if (proxyable instanceof X.RawToken)
 			proxy = charProxyMap.get(X.RawToken);
 		
+		else if (proxyable === X.RawToken)
+			proxy = charProxyMap.get(X.RawToken);
+		
 		else if (proxyable instanceof X.Tape)
 			proxy = charProxyMap.get(proxyable.enclosure);
 		
@@ -109,6 +112,9 @@ export const Proxy = new class
 						return proxyable.name;
 					
 					if (proxyable instanceof X.RawToken)
+						return X.RawToken.name;
+					
+					if (proxyable === X.RawToken)
 						return X.RawToken.name;
 					
 					if (X.isEnclosure(proxyable))

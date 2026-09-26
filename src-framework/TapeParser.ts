@@ -20,6 +20,7 @@ export class TapeParser
 	private index = 0;
 	private readonly stream: readonly string[];
 	private readonly allTokens: ReadonlyMap<string, X.FixedToken>;
+	private atLineStart = true;
 	
 	/** */
 	private read()
@@ -36,9 +37,9 @@ export class TapeParser
 	}
 	
 	/** */
-	private createTape(enclosure?: X.Enclosure)
+	private createTape(enclosure?: X.Enclosure, fragmenter: X.FixedToken | null = this.spec.fragmentationToken)
 	{
-		return new X.Tape(this.spec.fragmentationToken, enclosure);
+		return new X.Tape(fragmenter, enclosure);
 	}
 	
 	/** */
@@ -60,26 +61,34 @@ export class TapeParser
 	private parseAny(): X.TapeElement
 	{
 		const token = this.read();
+		const lineTape = this.tryParseLineTape(token);
+		if (lineTape)
+			return lineTape;
 		
 		switch (token)
 		{
 			case X.delimiters.parenTapeL.text:
+				this.atLineStart = false;
 				return this.parseToDelimiter(X.Enclosure.paren);
 				
 			case X.delimiters.bracketTapeL.text:
+				this.atLineStart = false;
 				return this.parseToDelimiter(X.Enclosure.bracket);
 			
 			case X.delimiters.braceTapeL.text:
+				this.atLineStart = false;
 				return this.parseToDelimiter(X.Enclosure.brace);
 			
 			case X.delimiters.quoteTape.text:
 			{
+				this.atLineStart = false;
 				const tape = this.createTape(X.Enclosure.quote);
 				tape.append(this.parseTextual(X.delimiters.quoteTape));
 				return tape;
 			}
 			case X.delimiters.fenceTape.text:
 			{
+				this.atLineStart = false;
 				const tape = this.createTape(X.Enclosure.fence);
 				tape.append(this.parseTextual(X.delimiters.fenceTape));
 				return tape;
@@ -88,7 +97,10 @@ export class TapeParser
 		
 		const existing = this.allTokens.get(token);
 		if (existing)
+		{
+			this.atLineStart = false;
 			return existing;
+		}
 		
 		if (token === X.delimiters.parenTapeR.text ||
 			token === X.delimiters.bracketTapeR.text ||
@@ -97,13 +109,78 @@ export class TapeParser
 		
 		const maybeMarkup = this.tryParseMarkup(token);
 		if (maybeMarkup !== null)
+		{
+			this.atLineStart = false;
 			return maybeMarkup;
+		}
 		
 		for (const flex of Object.values(this.spec.physicalFlexTokens))
 			if (flex.pattern?.test(token))
-				return (flex as any).new(token);
+			{
+				const parsed = (flex as any).new(token);
+				if (parsed instanceof X.NewlineToken)
+					this.atLineStart = true;
+				else if (!(parsed instanceof X.SpaceToken && this.atLineStart))
+					this.atLineStart = false;
+				
+				return parsed;
+			}
 		
 		throw `Unknown state - Cannot parse "${token}"`;
+	}
+	
+	/** */
+	private tryParseLineTape(token: string): X.Tape | null
+	{
+		if (!this.atLineStart)
+			return null;
+		
+		const lineSpec = this.spec.lineTapes?.find(s => s.prefix.text === token);
+		if (!lineSpec)
+			return null;
+		
+		const tape = this.createTape(X.Enclosure.line, null);
+		tape.append(lineSpec.prefix);
+		
+		this.parseLineTail(tape, lineSpec);
+		this.atLineStart = false;
+		return tape;
+	}
+	
+	/** */
+	private parseLineTail(tape: X.Tape, lineSpec: X.ILineTapeSpec)
+	{
+		const rawParts: string[] = [];
+		
+		const flushRaw = () =>
+		{
+			if (rawParts.length === 0)
+				return;
+			
+			tape.append(X.RawToken.new(rawParts.join(" ")));
+			rawParts.length = 0;
+		};
+		
+		for (;;)
+		{
+			const token = this.read();
+			if (token === "" || X.NewlineToken.pattern.test(token))
+			{
+				this.index--;
+				flushRaw();
+				return;
+			}
+			
+			const enclosure = lineSpec.allowedEnclosures?.find(e => e.left?.text === token);
+			if (enclosure)
+			{
+				flushRaw();
+				tape.append(this.parseToDelimiter(enclosure));
+				continue;
+			}
+			
+			rawParts.push(token);
+		}
 	}
 	
 	/** */

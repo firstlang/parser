@@ -373,7 +373,7 @@ function getMatchFieldValue(tapeLike: X.TapeLike, field: TMatchableField, depth 
 				continue;
 			}
 			
-			return result;
+			return result.length === 1 ? result[0] : result;
 		}
 		else if (X.FlexToken.isType(match))
 		{
@@ -382,6 +382,15 @@ function getMatchFieldValue(tapeLike: X.TapeLike, field: TMatchableField, depth 
 			
 			const e = tapeLike.at(0);
 			if (e instanceof match)
+				return e;
+		}
+		else if (match === X.RawToken)
+		{
+			if (tapeLike.maskedSize !== 1)
+				continue;
+			
+			const e = tapeLike.at(0);
+			if (e instanceof X.RawToken)
 				return e;
 		}
 		else if (match === X.FixedToken)

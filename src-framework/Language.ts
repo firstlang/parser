@@ -15,9 +15,17 @@ export interface ILanguageSpec
 {
 	masks: typeof X.Mask[];
 	fragmentationToken: X.FixedToken;
+	lineTapes?: readonly ILineTapeSpec[];
 	fixedTokens: X.FixedToken[];
 	physicalFlexTokens: TFlexTokenTable;
 	abstractFlexTokens: TFlexTokenTable;
+}
+
+/** */
+export interface ILineTapeSpec
+{
+	prefix: X.FixedToken;
+	allowedEnclosures?: readonly X.Enclosure[];
 }
 
 /** */

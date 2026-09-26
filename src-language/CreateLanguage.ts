@@ -11,6 +11,10 @@ export class ProjectLanguage extends X.Language
 		super({
 			masks: Object.values(Masks),
 			fragmentationToken: X.tokens.comma,
+			lineTapes: [
+				{ prefix: X.tokens.comment },
+				{ prefix: X.tokens.subtract, allowedEnclosures: [X.Enclosure.brace] },
+			],
 			fixedTokens: Object.values(X.tokens),
 			physicalFlexTokens: X.flexTokens,
 			abstractFlexTokens: X.flexTokensAbstract,
