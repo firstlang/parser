@@ -383,6 +383,8 @@ const primitives = Object.freeze({
 	}),
 	others: Object.freeze({
 		boolean: new X.FixedToken("boolean"),
+		byteString: new X.FixedToken("byte string"),
+		char: new X.FixedToken("char"),
 		decimal: new X.FixedToken("decimal"),
 		number: new X.FixedToken("number"),
 		string: new X.FixedToken("string"),
