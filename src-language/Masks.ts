@@ -12,8 +12,19 @@ type AnchorContent =
 	X.RawToken |
 	X.IslandMask;
 
+type AnchorBodyContent =
+	X.AnchorMask |
+	X.CommentMask;
+
+type FieldInitializer =
+	X.EntityToken |
+	X.LiteralToken |
+	X.SelectionStringMask |
+	X.FixedToken;
+
 const reuse = {
 	get body(): X.IManyField { return X.many(...X.StatementMasks, ...X.ExpressionMasks).paren(); },
+	get anchorBody(): X.IOneField { return X.one(X.AnchorBodyMask); },
 	get type(): X.IOneField { return X.one(...X.TypeMasks); },
 	/** Prefer atomic types so a following body is not consumed as generic arguments. */
 	get returnType(): X.IOneField
@@ -126,6 +137,17 @@ export class AnchorMask extends X.Mask
 		[X.schemaOptions]: { enclosure: X.Enclosure.line },
 		...X.anchor(X.tokens.subtract),
 		content: X.some(X.RawToken, X.IslandMask),
+	}}
+}
+
+/** Parenthesized declaration prose body. It owns anchors but has no runtime effect. */
+export class AnchorBodyMask extends X.EnclosureMask
+{
+	readonly content: AnchorBodyContent[] = X.unset;
+	
+	createSchemaEnclosed() { return {
+		enclosure: X.Enclosure.paren,
+		content: X.many(X.CommentMask, X.AnchorMask),
 	}}
 }
 
@@ -305,6 +327,16 @@ export class TypedParameterMask extends X.ParameterMask
 	}}
 }
 
+/** identifier, equivalent semantically to `identifier is unknown`. */
+export class UnknownParameterMask extends X.ParameterMask
+{
+	readonly name: X.EntityToken = X.unset;
+	
+	createSchema() { return {
+		name: X.one(X.EntityToken),
+	}}
+}
+
 /** identifier = 1 */
 export class DefaultParameterMask extends X.ParameterMask
 {
@@ -374,8 +406,47 @@ export class ConstructorFunctionMask extends FunctionMask
 	readonly signature: ParameterMask[] = X.unset;
 	
 	createSchema() { return {
+		...X.anchor(X.tokens.ctor),
 		signature: X.many(...X.ParameterMasks).paren(),
 		body: reuse.body.nullable(),
+	}}
+}
+
+/** Constructor with an explicit return annotation. */
+export class TypedConstructorFunctionMask extends X.ConstructorFunctionMask
+{
+	readonly returnType: X.TypeMasks = X.unset;
+	
+	createSchema() { return {
+		...X.anchor(X.tokens.ctor),
+		signature: X.many(...X.ParameterMasks).paren(),
+		...X.anchor(X.tokens.is),
+		returnType: reuse.returnType,
+		body: reuse.body.nullable(),
+	}}
+}
+
+/** Async constructor with an optional explicit result type. */
+export class AsyncConstructorFunctionMask extends X.ConstructorFunctionMask
+{
+	readonly returnType: X.TypeMasks | null = X.unset;
+	
+	createSchema() { return {
+		...X.anchor(X.tokens.ctor),
+		signature: X.many(...X.ParameterMasks).paren(),
+		...X.anchor(X.tokens.is, X.tokens.async),
+		returnType: reuse.returnType.nullable(),
+		body: reuse.body.nullable(),
+	}}
+}
+
+/** Bodyless zero-argument constructor declaration. */
+export class BareConstructorFunctionMask extends FunctionMask
+{
+	readonly keyword: X.FixedToken = X.unset;
+	
+	createSchema() { return {
+		keyword: X.one({ ctor: X.tokens.ctor }),
 	}}
 }
 
@@ -431,6 +502,31 @@ export class TypedStableFunctionMask extends X.StableFunctionMask
 	}}
 }
 
+/** Stable async function with an explicit non-Promise result annotation. */
+export class AsyncTypedStableFunctionMask extends X.StableFunctionMask
+{
+	readonly returnType: X.TypeMasks = X.unset;
+	
+	createSchema() { return {
+		name: X.one(X.LowercaseEntityToken),
+		signature: X.many(...X.ParameterMasks).paren(),
+		...X.anchor(X.tokens.is, X.tokens.async),
+		returnType: reuse.returnType,
+		body: reuse.body.nullable(),
+	}}
+}
+
+/** Stable async function without an explicit result annotation. */
+export class AsyncStableFunctionMask extends X.StableFunctionMask
+{
+	createSchema() { return {
+		name: X.one(X.LowercaseEntityToken),
+		signature: X.many(...X.ParameterMasks).paren(),
+		...X.anchor(X.tokens.is, X.tokens.async),
+		body: reuse.body.nullable(),
+	}}
+}
+
 /** */
 export class BuildFunctionMask extends FunctionMask
 {
@@ -454,13 +550,21 @@ export class StartupFunctionMask extends FunctionMask
 
 //# Space body masks
 
-/** */
+/** get name() is Type (...), get name is Type (...), or set name(value is Type) (...) */
 export class PropertyMask extends X.Mask
 {
-	
+	readonly accessor: X.FixedToken = X.unset;
+	readonly name: X.EntityToken = X.unset;
+	readonly signature: ParameterMask[] | null = X.unset;
+	readonly type: X.TypeMasks | null = X.unset;
+	readonly body: Body | null = X.unset;
 	
 	createSchema() { return {
-		
+		accessor: X.one({ get: X.tokens.get, set: X.tokens.set }),
+		name: X.one(X.EntityToken),
+		signature: X.many(...X.ParameterMasks).paren().nullable(),
+		type: reuse.returnType.nullable(X.tokens.is),
+		body: reuse.body.nullable(),
 	}}
 }
 
@@ -469,11 +573,46 @@ export class FieldMask extends X.Mask
 {
 	readonly name: X.EntityToken = X.unset;
 	readonly access: X.VisibilityKind = X.unset;
-	readonly type: X.TypeExpressionMask | null = X.unset;
-	readonly value: X.ExpressionMasks | null = X.unset;
+	readonly type: X.TypeMasks | null = X.unset;
+	readonly value: FieldInitializer | null = X.unset;
+	readonly body: X.AnchorBodyMask | null = X.unset;
 	
 	createSchema() { return {
-		
+		name: X.one(X.LowercaseEntityToken),
+		type: reuse.type.nullable(X.tokens.is),
+		value: X.one(X.SelectionStringMask, X.EntityToken, X.LiteralToken, X.tokenGroups.constants).nullable(X.tokens.basicAssign),
+		body: reuse.anchorBody.nullable(),
+	}}
+}
+
+/** Field declaration with an anchor-only body and no initializer. */
+export class AnchoredFieldMask extends X.Mask
+{
+	readonly name: X.EntityToken = X.unset;
+	readonly type: X.TypeMasks | null = X.unset;
+	readonly body: X.AnchorBodyMask = X.unset;
+	
+	createSchema() { return {
+		name: X.one(X.LowercaseEntityToken),
+		type: reuse.type.nullable(X.tokens.is),
+		body: reuse.anchorBody,
+	}}
+}
+
+/** Field declaration with an initializer and anchor-only body. */
+export class InitializedAnchoredFieldMask extends X.Mask
+{
+	readonly name: X.EntityToken = X.unset;
+	readonly type: X.TypeMasks | null = X.unset;
+	readonly value: FieldInitializer = X.unset;
+	readonly body: X.AnchorBodyMask = X.unset;
+	
+	createSchema() { return {
+		name: X.one(X.LowercaseEntityToken),
+		type: reuse.type.nullable(X.tokens.is),
+		...X.anchor(X.tokens.basicAssign),
+		value: X.one(X.SelectionStringMask, X.EntityToken, X.LiteralToken, X.tokenGroups.constants),
+		body: reuse.anchorBody,
 	}}
 }
 
@@ -626,21 +765,21 @@ export class SelectionNamedEntryMask extends X.Mask
 
 export class OneOfBodyMask extends X.Mask
 {
-	readonly elements: (X.SelectionNamedEntryMask | X.SelectionValueMask)[] = X.unset;
+	readonly elements: (X.CommentMask | X.AnchorMask | X.SelectionNamedEntryMask | X.SelectionValueMask)[] = X.unset;
 
 	createSchema() { return {
 		...X.anchor(X.tokens.oneof),
-		elements: X.many(X.SelectionNamedEntryMask, X.SelectionValueMask).paren(),
+		elements: X.many(X.CommentMask, X.AnchorMask, X.SelectionNamedEntryMask, X.SelectionValueMask).paren(),
 	}}
 }
 
 export class ManyOfBodyMask extends X.Mask
 {
-	readonly elements: (X.SelectionNamedEntryMask | X.LowercaseEntityToken)[] = X.unset;
+	readonly elements: (X.CommentMask | X.AnchorMask | X.SelectionNamedEntryMask | X.LowercaseEntityToken)[] = X.unset;
 
 	createSchema() { return {
 		...X.anchor(X.tokens.manyof),
-		elements: X.many(X.SelectionNamedEntryMask, X.LowercaseEntityToken).paren(),
+		elements: X.many(X.CommentMask, X.AnchorMask, X.SelectionNamedEntryMask, X.LowercaseEntityToken).paren(),
 	}}
 }
 
@@ -657,11 +796,11 @@ export class SelectionCaseMask extends X.Mask
 
 export class OneCaseOfBodyMask extends X.Mask
 {
-	readonly elements: X.SelectionCaseMask[] = X.unset;
+	readonly elements: (X.CommentMask | X.AnchorMask | X.SelectionCaseMask)[] = X.unset;
 
 	createSchema() { return {
 		...X.anchor(X.tokens.onecaseof),
-		elements: X.many(X.SelectionCaseMask).paren(),
+		elements: X.many(X.CommentMask, X.AnchorMask, X.SelectionCaseMask).paren(),
 	}}
 }
 

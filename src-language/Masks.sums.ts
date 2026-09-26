@@ -9,6 +9,7 @@ export const ParameterMasks = X.sum(
 	X.TypedOptionalParameterMask,
 	X.RestParameterMask,
 	X.DefaultParameterMask,
+	X.UnknownParameterMask,
 );
 
 /** Type forms that can be combined linearly with `or` or `and`. */
@@ -59,6 +60,8 @@ export const SpaceBodyMasks: readonly typeof X.Mask[] = X.sum(
 	X.AnchorMask,
 	X.FromMask,
 	X.SpaceMask,
+	X.AsyncTypedStableFunctionMask,
+	X.AsyncStableFunctionMask,
 	X.GeneratorStableFunctionMask,
 	X.TypedStableFunctionMask,
 	X.StableFunctionMask,
@@ -72,10 +75,15 @@ export const SpaceBodyMasks: readonly typeof X.Mask[] = X.sum(
 	X.TestGroupMask,
 	X.StartupFunctionMask,
 	X.BuildFunctionMask,
+	X.BareConstructorFunctionMask,
+	X.AsyncConstructorFunctionMask,
+	X.TypedConstructorFunctionMask,
 	X.SimpleAssignmentMask,
 	X.ConstructorFunctionMask,
 	X.GhostFunctionMask,
 	X.PropertyMask,
+	X.InitializedAnchoredFieldMask,
+	X.AnchoredFieldMask,
 	X.FieldMask,
 );
 
