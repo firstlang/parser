@@ -407,6 +407,7 @@ const words = Object.freeze({
 	export: new X.FixedToken("export"),
 	expose: new X.FixedToken("expose"),
 	extend: new X.FixedToken("extend"),
+	fieldof: new X.FixedToken("field of"),
 	from: new X.FixedToken("from"),
 	get: new X.FixedToken("get"),
 	ghost: new X.FixedToken("ghost"),

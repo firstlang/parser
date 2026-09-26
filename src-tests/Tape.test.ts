@@ -153,13 +153,13 @@ test("Basic mask test", () =>
 {
 	const tape = createTape();
 	const tokens = [
-		X.EntityToken.new("a"),
+		X.LowercaseEntityToken.new("a"),
 		X.tokens.basicAssign,
-		X.EntityToken.new("b"),
+		X.LowercaseEntityToken.new("b"),
 		X.tokens.add,
-		X.EntityToken.new("c"),
+		X.LowercaseEntityToken.new("c"),
 		X.tokens.add,
-		X.EntityToken.new("d"),
+		X.LowercaseEntityToken.new("d"),
 	];
 	
 	for (const token of tokens)

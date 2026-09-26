@@ -4,6 +4,7 @@ export type ParameterMasks = X.Sum<typeof ParameterMasks>;
 export const ParameterMasks = X.sum(
 	X.ConstrainedTypeParameterMask,
 	X.TypeParameterMask,
+	X.FieldParameterMask,
 	X.TypedParameterMask,
 	X.TypedDefaultParameterMask,
 	X.TypedOptionalParameterMask,

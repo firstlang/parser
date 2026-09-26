@@ -327,6 +327,19 @@ export class TypedParameterMask extends X.ParameterMask
 	}}
 }
 
+/** identifier is field of the_type */
+export class FieldParameterMask extends X.ParameterMask
+{
+	readonly name: X.EntityToken = X.unset;
+	readonly type: X.TypeMasks = X.unset;
+	
+	createSchema() { return {
+		name: X.one(X.EntityToken),
+		...X.anchor(X.tokens.is, X.tokens.fieldof),
+		type: reuse.type,
+	}}
+}
+
 /** identifier, equivalent semantically to `identifier is unknown`. */
 export class UnknownParameterMask extends X.ParameterMask
 {
