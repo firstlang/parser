@@ -84,11 +84,13 @@ export class Language
 	private spec: ILanguageSpec;
 	
 	/** Turns the code into a string array containing the lexically separated tokens. */
-	createTokenStrings(codeText: string)
+	createTokenStrings(codeText: string, includeWhitespace = true)
 	{
 		this.lexer.reset(codeText);
 		const mooTokens = Array.from(this.lexer);
-		const stringTokens = mooTokens.map(s => s.value);
+		const stringTokens = mooTokens
+			.filter(s => includeWhitespace || (s.type !== X.SpaceToken.name && s.type !== X.NewlineToken.name))
+			.map(s => s.value);
 		return stringTokens;
 	}
 	
@@ -154,7 +156,27 @@ function createLanguageLexer(spec: ILanguageSpec)
 		lineBreaks: true,
 	};
 	
-	return moo.compile(rules);
+	// Text states preserve source verbatim; code islands use the ordinary lexer.
+	rules[X.delimiters.quoteTape.text] = { match: '"', push: "quoted" };
+	rules[X.delimiters.backtickTape.text] = { match: "`", push: "interpolated" };
+	rules[X.delimiters.braceTapeL.text] = { match: "{", push: "island" };
+	
+	// Keep unknown source characters available for parser recovery.
+	rules.unrecognized = { match: /[\s\S]/u, lineBreaks: true };
+	
+	return moo.states({
+		code: rules,
+		island: { ...rules, [X.delimiters.braceTapeR.text]: { match: "}", pop: 1 } },
+		quoted: {
+			close: { match: '"', pop: 1 },
+			text: { match: /(?:\\[\s\S]?|[^"\\])+/u, lineBreaks: true },
+		},
+		interpolated: {
+			close: { match: "`", pop: 1 },
+			island: { match: "{", push: "island" },
+			text: { match: /(?:\\[\s\S]?|[^`\\{])+/u, lineBreaks: true },
+		},
+	});
 }
 
 /** Escapes text for literal inclusion in a regular expression. */

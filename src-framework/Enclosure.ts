@@ -49,11 +49,11 @@ export const Enclosure = {
 		right: X.delimiters.quoteTape,
 	},
 	
-	/** Tape for """ delimiters */
-	fence: {
-		kind: enc + "fence",
-		left: X.delimiters.fenceTape,
-		right: X.delimiters.fenceTape,
+	/** Tape for interpolated text delimiters */
+	backtick: {
+		kind: enc + "backtick",
+		left: X.delimiters.backtickTape,
+		right: X.delimiters.backtickTape,
 	},
 	
 	/** Tape for markup literals */

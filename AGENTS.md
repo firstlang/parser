@@ -33,6 +33,11 @@ This document is conceptual framing only. Architecture internals (tapes, charstr
 The /context/api folder has generated .d.ts files that you should use to get an idea of API shape rather than looking at the raw source code itself, in the interest of token economy.
 Before adding or changing parser tokens, masks, fields, sums, tapes, or mask application behavior, read /src-framework/intents.txt and preserve every applicable architectural claim.
 
+## Parser recovery and mask sums
+
+- Invalid, unwanted, or incomplete source is normal parser input. Never throw exceptions or hang because of source input; retain recoverable tokens and partial tapes. Exceptions are reserved for unknown internal states or broken implementation invariants.
+- Declare mask alternatives once with `X.sum(...)` and derive their instance union with `X.Sum<typeof ...>`. Do not repeat the alternatives in a tuple annotation or widen the sum to `typeof X.Mask[]`. Break recursive inference at schema/helper return types instead.
+
 ## Explicit execution flow
 
 - Never use imports as function calls: importing a module must not perform application work.

@@ -252,6 +252,9 @@ function getFieldValue(tapeLike: X.TapeLike, field: X.TField, depth = 0)
 	
 	if (field.kind === "one")
 	{
+		if (tapeLike instanceof X.Tape)
+			tapeLike.readAll();
+		
 		// The tape is expected to be element item long.
 		return getMatchFieldValue(tapeLike, field, depth);
 	}
@@ -268,41 +271,50 @@ function getFieldValue(tapeLike: X.TapeLike, field: X.TField, depth = 0)
 			const array: any[] = [];
 			for (const subTape of tapeLike.readFragments())
 			{
-				const value = getMatchFieldValue(subTape, field, depth);
+				const value = field.match.includes(X.RawToken) ?
+					getRepeatedFieldValues(subTape, field, depth) : 
+					getMatchFieldValue(subTape, field, depth);
+				
 				if (value)
-					array.push(value);
+					array.push(...X.toArray(value));
 			}
 			return array;
 		}
 		else
 		{
-			// A repeated field captured from a Fragment/Lens is one contiguous
-			// range. Prefer the longest complete item so optional suffixes stay
-			// attached, such as the arguments in `.member(arguments)`.
-			const values: any[] = [];
-			let index = 0;
-			while (index < tapeLike.maskedSize)
-			{
-				let value: any = null;
-				for (let end = tapeLike.maskedSize; end > index; end--)
-				{
-					value = getMatchFieldValue(tapeLike.slice(index, end), field, depth);
-					if (value !== null)
-						break;
-				}
-				if (value === null)
-					return null;
-
-				values.push(value);
-				// Applying the resolved value collapses its source span into one
-				// mask-aware slot, so the next unresolved item follows immediately.
-				index++;
-			}
-			return values;
+			return getRepeatedFieldValues(tapeLike, field, depth);
 		}
 	}
 	
 	throw 0;
+}
+
+/** Resolve consecutive items, including text alternating with expression islands. */
+function getRepeatedFieldValues(
+	tapeLike: X.TapeLike,
+	field: X.IManyField | X.ISomeField,
+	depth: number): any[] | null
+{
+	// Prefer the longest complete item so optional suffixes stay attached.
+	const values: any[] = [];
+	let index = 0;
+	while (index < tapeLike.maskedSize)
+	{
+		let value: any = null;
+		for (let end = tapeLike.maskedSize; end > index; end--)
+		{
+			value = getMatchFieldValue(tapeLike.slice(index, end), field, depth);
+			if (value !== null)
+				break;
+		}
+		if (value === null)
+			return null;
+
+		values.push(value);
+		// A resolved mask occupies one slot; raw tokens already occupy one.
+		index++;
+	}
+	return values;
 }
 
 /** Resolves a lasso field as one logical sequence of accepted alternatives. */

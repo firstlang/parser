@@ -430,6 +430,7 @@ const words = Object.freeze({
 	strong: new X.FixedToken("strong"),
 	super: new X.FixedToken("super"),
 	this: new X.FixedToken("this"),
+	byte: new X.FixedToken("byte"),
 	throw: new X.FixedToken("throw"),
 	til: new X.FixedToken("til"),
 	to: new X.FixedToken("to"),

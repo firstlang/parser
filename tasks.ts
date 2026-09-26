@@ -212,8 +212,7 @@ export function roundTripParseCase(parseCase: ParseCase)
 	const codeIn = parseCase.codeIn.trim();
 	const codeOut = (parseCase.codeOut ?? parseCase.codeIn).trim();
 	const tape = lang.createMaskedTape(codeIn);
-	const tokensExpected = lang.createTokenStrings(codeOut)
-		.filter(s => !/^\s+$/.test(s));
+	const tokensExpected = lang.createTokenStrings(codeOut, false);
 	
 	const tokensParsed = printParsedTokens(tape);
 	Assert.deepStrictEqual(
@@ -268,7 +267,9 @@ function printParsedTokens(tape: X.Tape)
 			{
 				if (index > 0 && (
 					mask instanceof X.SelectionArrayMask ||
-					mask instanceof X.ObjectTypeExpressionMask ||
+					mask instanceof X.FunctionActivatorMask ||
+					mask instanceof X.IndexActivatorMask ||
+					mask instanceof X.ObjectLiteralMask ||
 					maskField.field.match.some(match => match === X.TypedParameterMask) ||
 						(mask instanceof X.GenericTypeExpressionMask &&
 						maskField.field.data.enclosure === X.Enclosure.paren)))
@@ -278,7 +279,15 @@ function printParsedTokens(tape: X.Tape)
 					recurse(maskFieldValue);
 				
 				else if (maskFieldValue instanceof X.RawToken)
-					tokens.push(...maskFieldValue.text.split(" ").filter(t => t !== ""));
+				{
+					if (mask instanceof X.StringLiteralMask || mask instanceof X.InterpolatedStringMask)
+					{
+						if (maskFieldValue.text !== "")
+							tokens.push(maskFieldValue.text);
+					}
+					else
+						tokens.push(...maskFieldValue.text.split(" ").filter(t => t !== ""));
+				}
 				
 				else if (maskFieldValue instanceof X.FlexToken ||
 					maskFieldValue instanceof X.FixedToken)

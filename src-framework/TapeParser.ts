@@ -25,15 +25,13 @@ export class TapeParser
 	/** */
 	private read()
 	{
-		let token = "";
-		for (;;)
+		while (this.index < this.stream.length)
 		{
-			token = this.stream[this.index++] || "";
+			const token = this.stream[this.index++];
 			if (token !== "" && token !== " " && token !== "\t")
-				break;
+				return token;
 		}
-		
-		return token;
+		return "";
 	}
 	
 	/** */
@@ -61,6 +59,9 @@ export class TapeParser
 	private parseAny(): X.TapeElement
 	{
 		const token = this.read();
+		if (token === "")
+			return X.SpaceToken.new("");
+		
 		const lineTape = this.tryParseLineTape(token);
 		if (lineTape)
 			return lineTape;
@@ -80,19 +81,11 @@ export class TapeParser
 				return this.parseToDelimiter(X.Enclosure.brace);
 			
 			case X.delimiters.quoteTape.text:
-			{
 				this.atLineStart = false;
-				const tape = this.createTape(X.Enclosure.quote);
-				tape.append(this.parseTextual(X.delimiters.quoteTape));
-				return tape;
-			}
-			case X.delimiters.fenceTape.text:
-			{
+				return this.parseTextual(X.Enclosure.quote);
+			case X.delimiters.backtickTape.text:
 				this.atLineStart = false;
-				const tape = this.createTape(X.Enclosure.fence);
-				tape.append(this.parseTextual(X.delimiters.fenceTape));
-				return tape;
-			}
+				return this.parseTextual(X.Enclosure.backtick);
 		}
 		
 		const existing = this.allTokens.get(token);
@@ -126,7 +119,8 @@ export class TapeParser
 				return parsed;
 			}
 		
-		throw `Unknown state - Cannot parse "${token}"`;
+		this.atLineStart = false;
+		return X.RawToken.new(token);
 	}
 	
 	/** */
@@ -166,7 +160,9 @@ export class TapeParser
 			const token = this.read();
 			if (token === "" || X.NewlineToken.pattern.test(token))
 			{
-				this.index--;
+				if (token !== "")
+					this.index--;
+				
 				flushRaw();
 				return;
 			}
@@ -188,7 +184,7 @@ export class TapeParser
 	{
 		const tape = new X.Tape(this.spec.fragmentationToken, enclosure);
 		
-		for (;;)
+		while (this.index < this.stream.length)
 		{
 			const result = this.parseAny();
 			if (result === tape.enclosure.right)
@@ -200,21 +196,23 @@ export class TapeParser
 	}
 		
 	/** */
-	private parseTextual(delimiter: X.FixedToken): X.RawToken
+	private parseTextual(enclosure: X.Enclosure): X.Tape
 	{
-		const parts: string[] = [];
-		
-		for (;;)
+		const tape = this.createTape(enclosure, null);
+		while (this.index < this.stream.length)
 		{
-			const token = this.read();
-			if (token === delimiter.text)
-				break;
-			
-			parts.push(token);
+			const token = this.stream[this.index++];
+			if (token === enclosure.right?.text)
+			{
+				this.atLineStart = false;
+				return tape;
+			}
+			if (enclosure === X.Enclosure.backtick && token === X.delimiters.braceTapeL.text)
+				tape.append(this.parseToDelimiter(X.Enclosure.brace));
+			else
+				tape.append(X.RawToken.new(token));
 		}
-		
-		const clause = X.RawToken.new(parts.join(" "));
-		return clause;
+		return tape;
 	}
 	
 	/** */
@@ -228,8 +226,9 @@ export class TapeParser
 			tape = this.createTape(X.Enclosure.markup);
 			tape.append(X.MarkupOpenToken.new(token));
 			
-			for (;;)
+			while (this.index < this.stream.length)
 			{
+				token = this.read();
 				if (token === X.delimitersForMarkup.markupClose.text ||
 					token === X.delimitersForMarkup.markupIslandClose.text)
 				{
@@ -251,7 +250,7 @@ export class TapeParser
 		// Parse markup content
 		if (tape)
 		{
-			for (;;)
+			while (this.index < this.stream.length)
 			{
 				token = this.read();
 				

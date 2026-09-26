@@ -18,7 +18,7 @@ export const delimiters = Object.freeze({
 	braceTapeL: new X.FixedToken("{"),
 	braceTapeR: new X.FixedToken("}"),
 	quoteTape: new X.FixedToken(`"`),
-	fenceTape: new X.FixedToken(`"""`),
+	backtickTape: new X.FixedToken("`"),
 	
 	// Flex
 	//MarkupOpenToken: MarkupOpenToken,

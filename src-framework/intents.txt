@@ -1,4 +1,6 @@
 The parser represents source as tokens stored in hierarchical tapes.
+Invalid or incomplete source is recoverable input, never a reason to throw or hang; preserve tokens and partial tapes.
+Parser exceptions are reserved for unknown internal states or broken implementation invariants.
 The parser applies masks directly over tape content rather than constructing a separate disposable syntax tree.
 Tokens and masks retain object identity while edits rewrite the surrounding tape structure.
 The framework in src-framework is language-independent.
@@ -27,13 +29,14 @@ X.lasso matches a sequence of alternatives and stores the result in one logical 
 X.lasso greedily matches one or more consecutive values accepted by its supplied alternatives until the next value does not conform.
 X.raw captures otherwise uninterpreted token content as a RawToken.
 X.has tests for a fixed-token sequence and stores whether that sequence was present.
-A field can declare that its matched content is enclosed by parentheses, braces, brackets, quotes, fences, or markup.
+A field can declare that its matched content is enclosed by parentheses, braces, brackets, quotes, backticks, or markup.
 A lasso field rejects enclosure-mask alternatives.
 A some field rejects enclosure-mask alternatives.
 The original reason that lasso and some reject enclosure-mask alternatives is unknown.
 The enclosure-mask restrictions on lasso and some are preserved unless the user explicitly approves changing them.
 A nullable field uses an explicit fixed-token anchor to determine whether its optional value is present.
 Mask sums are declared with X.sum.
+Mask alternatives are declared once in X.sum and their instance unions are inferred with X.Sum; recursive inference is broken with schema/helper return types, not duplicated sum annotations.
 The runtime value of a mask sum is the ordered array of concrete mask constructors passed to X.sum.
 The TypeScript value type of a mask sum is the union of instances of its concrete mask constructors.
 A polymorphic schema field lists the applicable concrete mask constructors or spreads an explicit mask sum.

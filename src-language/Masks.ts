@@ -19,8 +19,11 @@ type AnchorBodyContent =
 type FieldInitializer =
 	X.EntityToken |
 	X.LiteralToken |
-	X.SelectionStringMask |
+	X.StringLiteralMask |
+	X.InterpolatedStringMask |
 	X.FixedToken;
+
+type ParameterDefault = X.TExpressionable;
 
 const reuse = {
 	get body(): X.IManyField { return X.many(...X.StatementMasks, ...X.ExpressionMasks).paren(); },
@@ -32,7 +35,7 @@ const reuse = {
 		return X.one(
 			X.TypeExpressionMask,
 			X.GenericTypeExpressionMask,
-			X.ObjectTypeExpressionMask,
+			X.ObjectLiteralMask,
 			X.ArrayTypeExpressionMask,
 			X.EditableTypeExpressionMask,
 			X.EditableArrayTypeExpressionMask,
@@ -292,12 +295,12 @@ export class ObjectLiteralFieldMask extends X.Mask
 		name: X.one(X.EntityToken),
 		...X.anchor(X.tokens.is),
 		type: reuse.type,
-		value: X.lasso(...X.ExpressionMasks, X.EntityToken, X.LiteralToken).nullable(X.tokens.basicAssign),
+		value: X.expressionable().nullable(X.tokens.basicAssign),
 	}}
 }
 
 /** `{ id is string }`, usable as structural type syntax or as a zero-value literal. */
-export class ObjectTypeExpressionMask extends X.Mask
+export class ObjectLiteralMask extends X.Mask
 {
 	readonly content: X.ObjectLiteralFieldMask[] = X.unset;
 	
@@ -351,11 +354,13 @@ export class TypedParameterMask extends X.ParameterMask
 export class FieldParameterMask extends X.ParameterMask
 {
 	readonly name: X.EntityToken = X.unset;
+	readonly ownership: X.FixedToken | null = X.unset;
 	readonly type: X.TypeMasks = X.unset;
 	
 	createSchema() { return {
 		name: X.one(X.EntityToken),
 		...X.anchor(X.tokens.is, X.tokens.fieldof),
+		ownership: X.one({ weak: X.tokens.weak, strong: X.tokens.strong }).nullable(),
 		type: reuse.type,
 	}}
 }
@@ -374,12 +379,12 @@ export class UnknownParameterMask extends X.ParameterMask
 export class DefaultParameterMask extends X.ParameterMask
 {
 	readonly name: X.EntityToken = X.unset;
-	readonly value: X.ExpressionMasks = X.unset;
+	readonly value: ParameterDefault = X.unset;
 	
 	createSchema() { return {
 		name: X.one(X.EntityToken),
 		...X.anchor(X.tokens.basicAssign),
-		value: X.one(...X.ExpressionMasks),
+		value: X.expressionable(),
 	}}
 }
 
@@ -388,14 +393,30 @@ export class TypedDefaultParameterMask extends X.ParameterMask
 {
 	readonly name: X.EntityToken = X.unset;
 	readonly type: X.TypeMasks = X.unset;
-	readonly value: X.ExpressionMasks | null= X.unset;
+	readonly value: ParameterDefault | null = X.unset;
 	
 	createSchema() { return {
 		name: X.one(X.EntityToken),
 		...X.anchor(X.tokens.is),
 		type: reuse.type,
 		...X.anchor(X.tokens.basicAssign),
-		value: X.one(...X.ExpressionMasks),
+		value: X.expressionable(),
+	}}
+}
+
+/** identifier is the_type = -1 */
+export class NegativeTypedDefaultParameterMask extends X.ParameterMask
+{
+	readonly name: X.EntityToken = X.unset;
+	readonly type: X.TypeMasks = X.unset;
+	readonly value: X.LiteralToken = X.unset;
+
+	createSchema() { return {
+		name: X.one(X.EntityToken),
+		...X.anchor(X.tokens.is),
+		type: reuse.type,
+		...X.anchor(X.tokens.basicAssign, X.tokens.subtract),
+		value: X.one(X.IntegerToken, X.DecimalToken, X.Float32Token, X.Float64Token, X.Float128Token),
 	}}
 }
 
@@ -495,11 +516,11 @@ export class GhostFunctionMask extends FunctionMask
 /** */
 export class StableFunctionMask extends FunctionMask
 {
-	readonly name: X.LowercaseEntityToken = X.unset;
+	readonly name: X.LowercaseEntityToken | X.FixedToken = X.unset;
 	readonly signature: ParameterMask[] = X.unset;
 	
 	createSchema() { return {
-		name: X.one(X.LowercaseEntityToken),
+		name: X.one(X.LowercaseEntityToken, { delete: X.tokens.delete }),
 		signature: X.many(...X.ParameterMasks).paren(),
 		body: reuse.body.nullable(),
 	}}
@@ -508,12 +529,12 @@ export class StableFunctionMask extends FunctionMask
 /** Stable generator function with an explicit yielded type. */
 export class GeneratorStableFunctionMask extends X.FunctionMask
 {
-	readonly name: X.LowercaseEntityToken = X.unset;
+	readonly name: X.LowercaseEntityToken | X.FixedToken = X.unset;
 	readonly signature: ParameterMask[] = X.unset;
 	readonly returnType: X.TypeMasks = X.unset;
 
 	createSchema() { return {
-		name: X.one(X.LowercaseEntityToken),
+		name: X.one(X.LowercaseEntityToken, { delete: X.tokens.delete }),
 		signature: X.many(...X.ParameterMasks).paren(),
 		...X.anchor(X.tokens.is, X.tokens.yield1),
 		returnType: reuse.returnType,
@@ -527,7 +548,7 @@ export class TypedStableFunctionMask extends X.StableFunctionMask
 	readonly returnType: X.TypeMasks = X.unset;
 	
 	createSchema() { return {
-		name: X.one(X.LowercaseEntityToken),
+		name: X.one(X.LowercaseEntityToken, { delete: X.tokens.delete }),
 		signature: X.many(...X.ParameterMasks).paren(),
 		...X.anchor(X.tokens.is),
 		returnType: reuse.returnType,
@@ -541,7 +562,7 @@ export class AsyncTypedStableFunctionMask extends X.StableFunctionMask
 	readonly returnType: X.TypeMasks = X.unset;
 	
 	createSchema() { return {
-		name: X.one(X.LowercaseEntityToken),
+		name: X.one(X.LowercaseEntityToken, { delete: X.tokens.delete }),
 		signature: X.many(...X.ParameterMasks).paren(),
 		...X.anchor(X.tokens.is, X.tokens.async),
 		returnType: reuse.returnType,
@@ -553,7 +574,7 @@ export class AsyncTypedStableFunctionMask extends X.StableFunctionMask
 export class AsyncStableFunctionMask extends X.StableFunctionMask
 {
 	createSchema() { return {
-		name: X.one(X.LowercaseEntityToken),
+		name: X.one(X.LowercaseEntityToken, { delete: X.tokens.delete }),
 		signature: X.many(...X.ParameterMasks).paren(),
 		...X.anchor(X.tokens.is, X.tokens.async),
 		body: reuse.body.nullable(),
@@ -613,7 +634,12 @@ export class FieldMask extends X.Mask
 	createSchema() { return {
 		name: X.one(X.LowercaseEntityToken),
 		type: reuse.type.nullable(X.tokens.is),
-		value: X.one(X.SelectionStringMask, X.EntityToken, X.LiteralToken, X.tokenGroups.constants).nullable(X.tokens.basicAssign),
+		value: X.one(
+			X.StringLiteralMask,
+			X.InterpolatedStringMask,
+			X.EntityToken,
+			X.LiteralToken,
+			X.tokenGroups.constants).nullable(X.tokens.basicAssign),
 		body: reuse.anchorBody.nullable(),
 	}}
 }
@@ -644,7 +670,13 @@ export class InitializedAnchoredFieldMask extends X.Mask
 		name: X.one(X.LowercaseEntityToken),
 		type: reuse.type.nullable(X.tokens.is),
 		...X.anchor(X.tokens.basicAssign),
-		value: X.one(X.SelectionStringMask, X.EntityToken, X.LiteralToken, X.tokenGroups.constants),
+		value: X.one(
+			X.StringLiteralMask,
+			X.InterpolatedStringMask,
+			X.EntityToken,
+			X.LiteralToken,
+			X.tokenGroups.constants
+		),
 		body: reuse.anchorBody,
 	}}
 }
@@ -693,22 +725,45 @@ export class AliasMask extends X.Mask
 }
 
 /** A literal string without runtime interpolation. */
-export class SelectionStringMask extends X.Mask
+export class StringLiteralMask extends X.Mask
 {
+	readonly isByteString: boolean = X.unset;
 	readonly content: X.RawToken = X.unset;
 
 	createSchema() { return {
+		isByteString: X.has(X.tokens.byte),
 		content: X.raw().quote(),
+	}}
+}
+
+/** Text and ordinary expression islands, retaining their source order. */
+export class InterpolatedStringMask extends X.Mask
+{
+	readonly isByteString: boolean = X.unset;
+	readonly content: (X.RawToken | X.StringInterpolationMask)[] = X.unset;
+	
+	createSchema() { return {
+		isByteString: X.has(X.tokens.byte),
+		content: X.many(X.RawToken, X.StringInterpolationMask).backtick(),
+	}}
+}
+
+export class StringInterpolationMask extends X.Mask
+{
+	readonly content: X.ExpressionValue[] = X.unset;
+
+	createSchema(): X.TMaskSchema { return {
+		content: X.many(...X.expressionAlternatives()).brace(),
 	}}
 }
 
 /** Keeps enclosed literals out of lasso fields used by expression masks. */
 export class SelectionLiteralMask extends X.Mask
 {
-	readonly value: X.SelectionStringMask | X.SelectionArrayMask | X.SelectionObjectMask | X.NegativeSelectionLiteralMask | X.FixedToken = X.unset;
+	readonly value: X.SelectionArrayMask | X.SelectionObjectMask | X.NegativeSelectionLiteralMask | X.FixedToken = X.unset;
 
 	createSchema() { return {
-		value: X.one(X.NegativeSelectionLiteralMask, X.SelectionStringMask, X.SelectionArrayMask, X.SelectionObjectMask, X.tokenGroups.constants),
+		value: X.one(X.NegativeSelectionLiteralMask, X.SelectionArrayMask, X.SelectionObjectMask, X.tokenGroups.constants),
 	}}
 }
 
@@ -773,7 +828,7 @@ export class SelectionValueMask extends X.Mask
 		value: X.one(
 			X.SelectionReferenceMask,
 			X.NegativeSelectionLiteralMask,
-			X.SelectionStringMask,
+			X.StringLiteralMask,
 			X.SelectionArrayMask,
 			X.SelectionObjectMask,
 			X.IntegerToken, X.DecimalToken, X.UnsignedIntegerToken,
@@ -1009,7 +1064,7 @@ export class SimpleAssignmentMask extends X.Mask
 		annotation: X.one(LocalTypeAnnotationMask).nullable(X.tokens.is),
 		defer: X.has(X.tokens.defer),
 		operator: X.one(X.AssignerKind),
-		value: X.lasso(...X.ExpressionMasks, X.EntityToken, X.LiteralToken)
+		value: X.lasso(...X.expressionAlternatives()),
 	}}
 }
 
@@ -1018,14 +1073,14 @@ export class SimpleAssignmentMask extends X.Mask
  */
 export class ComplexAssignmentMask extends X.Mask
 {
-	readonly particle: X.CompoundParticleMask | X.OriginParticleMask = X.unset;
+	readonly particle: (X.CompoundParticleMask | X.OriginParticleMask)[] = X.unset;
 	readonly operator: X.AssignerKind = X.unset;
 	readonly value: X.TExpressionable = X.unset;
 	
 	createSchema() { return {
-		particle: X.one(X.CompoundParticleMask, X.OriginParticleMask),
+		particle: X.lasso(X.CompoundParticleMask, X.OriginParticleMask),
 		operator: X.one(X.AssignerKind),
-		value: X.lasso(...X.ExpressionMasks),
+		value: X.lasso(...X.expressionAlternatives()),
 	}}
 }
 
@@ -1109,11 +1164,11 @@ export class YieldStatementMask extends X.Mask
 /** */
 export class ReturnStatementMask extends X.Mask
 {
-	readonly expression: X.ExpressionMasks = X.unset;
+	readonly expression: X.TExpressionable = X.unset;
 	
 	createSchema() { return {
 		...X.anchor(X.tokens.return),
-		expression: X.lasso(...X.ExpressionMasks)
+		expression: X.expressionable(),
 	}}
 }
 
@@ -1157,7 +1212,7 @@ export class ExpressionStatementMask extends X.Mask
 	readonly expression: X.TExpressionable = X.unset;
 	
 	createSchema() { return {
-		expression: X.lasso(...X.ExpressionMasks, X.EntityToken, X.LiteralToken),
+		expression: X.expressionable(),
 	}}
 }
 
@@ -1316,36 +1371,36 @@ export class SpreadExpressionMask extends X.Mask
 /** (x) */
 export class FunctionActivatorMask extends X.EnclosureMask
 {
-	readonly content: X.TExpressionable[] = X.unset;
+	readonly content: X.ExpressionValue[] = X.unset;
 	
 	createSchemaEnclosed() { return {
 		enclosure: X.Enclosure.paren,
-		content: X.many(X.EntityToken, X.LiteralToken, ...X.ExpressionMasks),
+		content: X.many(...X.expressionAlternatives()),
 	}}
 }
 
 /** [x] */
 export class IndexActivatorMask extends X.EnclosureMask
 {
-	readonly content: X.TExpressionable[] = X.unset;
+	readonly content: X.ExpressionValue[] = X.unset;
 	
 	createSchemaEnclosed() { return {
 		enclosure: X.Enclosure.bracket,
-		content: X.many(X.EntityToken, X.LiteralToken, ...X.ExpressionMasks),
+		content: X.many(...X.expressionAlternatives()),
 	}}
 }
 
 /** term(x)[x].term(x)[x] */
 export class CompoundParticleMask extends X.Mask
 {
-	readonly origin: OriginParticleMask = X.unset;
+	readonly origin: OriginParticleMask[] = X.unset;
 	readonly posts: PostParticleMask[] = X.unset;
 	
 	createSchema() { return {
 		[X.schemaOptions]: {
 			sparse: true,
 		},
-		origin: X.one(X.OriginParticleMask),
+		origin: X.lasso(X.OriginParticleMask),
 		posts: X.some(X.NegativePostParticleMask, X.PostParticleMask),
 	}}
 }
@@ -1353,14 +1408,14 @@ export class CompoundParticleMask extends X.Mask
 /** term(x)(x)[x][x] */
 export class OriginParticleMask extends X.Mask
 {
-	readonly term: X.EntityToken | X.ParticleLiteralToken | X.ControlFlowMask | X.FixedToken = X.unset;
+	readonly term: X.EntityToken | X.ParticleLiteralToken | X.ControlFlowMask | X.StringLiteralMask | X.InterpolatedStringMask | X.FixedToken = X.unset;
 	readonly activators: (X.FunctionActivatorMask | X.IndexActivatorMask)[] = X.unset;
 	
 	createSchema(): X.TMaskSchema { return {
 		[X.schemaOptions]: {
 			sparse: true,
 		},
-		term: X.one(X.EntityToken, X.ParticleLiteralToken, X.ControlFlowMask, { this: X.tokens.this }),
+		term: X.one(X.StringLiteralMask, X.InterpolatedStringMask, X.EntityToken, X.ParticleLiteralToken, X.ControlFlowMask, { this: X.tokens.this }),
 		activators: X.many(X.FunctionActivatorMask, X.IndexActivatorMask),
 	}}
 }
@@ -1368,14 +1423,14 @@ export class OriginParticleMask extends X.Mask
 /** .term(x)(x)[x][x] */
 export class PostParticleMask extends X.Mask
 {
-	readonly term: X.EntityToken | X.LiteralToken | X.SelectionLiteralMask | X.FixedToken = X.unset;
+	readonly term: X.EntityToken | X.LiteralToken | X.StringLiteralMask | X.SelectionLiteralMask | X.FixedToken = X.unset;
 	readonly activators: (X.FunctionActivatorMask | X.IndexActivatorMask)[] = X.unset;
 	
 	createSchema() { return {
 		...X.anchor(X.tokens.dot),
 		term: X.one(X.EntityToken, X.IntegerToken, X.DecimalToken, X.UnsignedIntegerToken,
 			X.Float32Token, X.Float64Token, X.Float128Token, X.HexToken, X.CharToken,
-			X.SelectionLiteralMask, X.tokenGroups.constants),
+			X.StringLiteralMask, X.SelectionLiteralMask, X.tokenGroups.constants),
 		activators: X.many(X.FunctionActivatorMask, X.IndexActivatorMask),
 	}}
 }
@@ -1397,7 +1452,7 @@ export class NegativePostParticleMask extends X.PostParticleMask
 export class InfixedParticleMask extends X.Mask
 {
 	readonly operator: X.InfixOperatorKind = X.unset;
-	readonly particle: (CompoundParticleMask | OriginParticleMask | X.LiteralToken) = X.unset;
+	readonly particle: CompoundParticleMask | OriginParticleMask | X.LiteralToken = X.unset;
 	
 	createSchema() { return {
 		operator: X.one(X.InfixOperatorKind),
@@ -1408,7 +1463,7 @@ export class InfixedParticleMask extends X.Mask
 /** term + term + term */
 export class InfixedChainMask extends X.Mask
 {
-	readonly origin: (X.CompoundParticleMask | X.OriginParticleMask | X.LiteralToken) = X.unset;
+	readonly origin: X.CompoundParticleMask | X.OriginParticleMask | X.LiteralToken = X.unset;
 	readonly successors: InfixedParticleMask[] = X.unset;
 	
 	createSchema() { return {
