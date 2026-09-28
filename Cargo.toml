@@ -1,0 +1,16 @@
+[package]
+name = "first-parser"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Open-source recursive descent parser for the First programming language."
+repository = "https://github.com/firstlang/parser"
+readme = "README.md"
+keywords = ["first", "parser", "recursive-descent", "language"]
+categories = ["compilers", "parser-implementations"]
+
+[lib]
+name = "first_parser"
+path = "src/lib.rs"
+
+[dependencies]
